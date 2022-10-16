@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 import requests
-import os
 import pandas as pd
 from pathlib import Path
 import shutil
@@ -10,20 +9,26 @@ import time
 from tqdm.auto import tqdm
 import zipfile
 
+import typing
+
+import sys, os
+print(os.path.dirname(sys.argv[0]) )
+
 # from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 LOCAL_DATA_DIR_PATH = Path('../../data/local')
-END_DATE = '2022-10-09 23:59:00'
-START_DATE = '2022-10-03 00:03:00'
+END_DATE = '2022-10-19 23:59:00'
+START_DATE = '2022-10-11 00:58:00'
 response_prev = dict()
 
 
-def save_data(optimized_data_list, dt_now, data_dir_path=''):
+def save_data(optimized_data_list: list, dt_now: str, data_dir_path: Path = Path('')):
     if optimized_data_list:
-        path = f"trans_data_{dt_now.strftime('%d_%b_%Y').upper()}"
-        Path(data_dir_path, path).mkdir(parents=True, exist_ok=True)
+        path = data_dir_path/Path(f"trans_data_{dt_now.strftime('%d_%b_%Y').upper()}")
+        print(f"Dir to make '{str(path)}'")
+        Path(data_dir_path).mkdir(parents=True, exist_ok=True)
 
         f_name = Path(f"trans_{dt_now.strftime('%Y-%m-%d %H;%M;%S')}.json")
 
@@ -59,7 +64,8 @@ def request_data():
             optimized_data_list += [response_cur[imei]]
 
         response_prev = response_cur
-        save_data(optimized_data_list, dt_now, dir_path=Path(LOCAL_DATA_DIR_PATH, "jsons"))
+        save_data(optimized_data_list, dt_now,
+                  data_dir_path=Path(LOCAL_DATA_DIR_PATH, "jsons"))
 
     except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as err:
         print(f"{dt_now.strftime('%Y-%m-%d %H;%M;%S')} : error while trying to GET data\n"
@@ -102,28 +108,26 @@ def folder_to_df(src_folder, dst_dir=Path(LOCAL_DATA_DIR_PATH, "tables")):
         )
 
     df = get_df(results)
-    df_file_name = f"data_for_{str(src_folder)[11:]}.feather"
-    df.to_feather(Path(dst_dir,df_file_name), encoding='utf-8', index=False, header=True)
+    df_file_name = f"data_for_{str(src_folder.name)[11:]}.feather"
+    df.to_feather(Path(dst_dir, df_file_name), encoding='utf-8', index=False, header=True)
 
 
-def zipdir(path, ziph):
+def zipdir(src_dir: Path, ziph: zipfile.ZipFile) -> None:
     # ziph is zipfile handle
-    for root, dirs, files in os.walk(path):
-        for file in tqdm(files, position=0, leave=True, desc=f"Zip {path}"):
-            ziph.write(os.path.join(root, file),
-                       os.path.relpath(os.path.join(root, file),
-                                       os.path.join(path, '..')))
+    files_list = src_dir.iterdir()
+    for file_name in tqdm(files_list, position=0, leave=True, desc=f"Zip {str(src_dir)}"):
+        ziph.write(file_name, file_name.name)
 
 
-def write_zip_archive(folder):
-    zip_fname = f"archives/{folder}.zip"
+def write_zip_archive(folder: Path, dst_path: Path = '') -> None:
+    zip_fname = dst_path / Path(f"{folder.name}.zip")
     with zipfile.ZipFile(zip_fname, 'w', zipfile.ZIP_DEFLATED) as zipf:
         zipdir(f"{folder}", zipf)
 
 
 def afterprocess_data():
     print(f"Data aterprocessing started at {datetime.now()}")
-    folders_list = [p for p in pathlib.Path().iterdir() if 'trans_data_' in str(p)]
+    folders_list = [p for p in Path().iterdir() if 'trans_data_' in str(p)]
     folders_list = sorted(folders_list, key=lambda x: datetime.strptime(str(x)[11:], '%d_%b_%Y'))[:-1]
     print(f"\tFolders to process {folders_list}")
     pbar = tqdm(folders_list, leave=False)
