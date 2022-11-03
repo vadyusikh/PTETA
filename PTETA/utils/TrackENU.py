@@ -8,6 +8,25 @@ def get_track_enu(coord_str: str, center: np.array):
     return TrackENU(np.array(coords, center))
 
 
+def optimize_track(points: np.array, min_dist: float = 10) -> np.array:
+    opt_track = [points[0]]
+    i = 0
+
+    while i < len(points[:-1, :]):
+        c1 = points[i, :]
+        j = 0
+        dist = np.linalg.norm(points[i + j, :] - c1)
+        while j < len(points[i + 1:, :]) and dist < min_dist:
+            j += 1
+            dist = np.linalg.norm(points[i + j, :] - c1)
+
+        if np.linalg.norm(points[i + max(1, j - 1), :] - c1) > 1e-2:
+            opt_track += [points[i + max(1, j - 1), :]]
+        i += max(1, j - 1)
+
+    return np.array(opt_track)
+
+
 class TrackENU:
     def __init__(self, track_geod: np.array, center: np.array):
         self.track_enu = None
@@ -27,15 +46,19 @@ class TrackENU:
         return len(self.track_geod)
 
     def convert_to_enu(self, coord_geod: np.array) -> np.array:
-        e, n, u = pymap3d.geodetic2enu(
-            lat=coord_geod[0], lon=coord_geod[1], h=0,
-            lat0=self.center[0], lon0=self.center[1], h0=0,
+        e, n, _ = pymap3d.geodetic2enu(
+            lat=coord_geod[:, 0],
+            lon=coord_geod[:, 1],
+            h=np.zeros_like(coord_geod[:, 0]),
+            lat0=self.center[0],
+            lon0=self.center[1],
+            h0=0,
             ell=self.ellipsoid, deg=True)
 
-        return np.array([e, n])
+        return np.dstack([e, n])[0]
 
     def convert_to_geod(self, coord_geod: np.array) -> np.array:
-        res = pymap3d.enu2geodetic(
+        lat, lon, _ = pymap3d.enu2geodetic(
             e=coord_geod[:, 0],
             n=coord_geod[:, 1],
             u=np.zeros_like(coord_geod[:, 0]),
@@ -44,25 +67,7 @@ class TrackENU:
             h0=0, ell=self.ellipsoid, deg=True
         )
 
-        return np.dstack([res[0], res[1]])[0]
-
-    def optimize_track(self, points: np.array, min_dist: float = 10) -> np.array:
-        opt_track = [points[0]]
-        i = 0
-
-        while i < len(points[:-1, :]):
-            c1 = points[i, :]
-            j = 0
-            dist = np.linalg.norm(points[i + j, :] - c1)
-            while j < len(points[i + 1:, :]) and dist < min_dist:
-                j += 1
-                dist = np.linalg.norm(points[i + j, :] - c1)
-
-            if np.linalg.norm(points[i + max(1, j - 1), :] - c1) > 1e-2:
-                opt_track += [points[i + max(1, j - 1), :]]
-            i += max(1, j - 1)
-
-        return np.array(opt_track)
+        return np.dstack([lat, lon])[0]
 
     def proj_on_segment_cos_value(self, seg_num: int, point: np.array) -> float:
         vec2point = point - self.track_enu[seg_num]
@@ -70,7 +75,7 @@ class TrackENU:
 
     def is_on_segment(self, seg_num: int, point: np.array) -> bool:
         proj_cos_value = self.proj_on_segment_cos_value(seg_num, point)
-        return proj_cos_value > 0 and proj_cos_value <= self.segment_length[seg_num]
+        return 0 < proj_cos_value <= self.segment_length[seg_num]
 
     def get_proj_on_seg_data(self, seg_num: int, point: np.array) -> dict:
         """
@@ -95,7 +100,7 @@ class TrackENU:
         result = dict()
 
         seg_proj = list()
-        for seg_n, _ in enumerate(r.unit_vec):
+        for seg_n, _ in enumerate(self.unit_vec):
             res = self.get_proj_on_seg_data(seg_n, point)
             if res is not None:
                 res['segment_number'] = seg_n
@@ -106,7 +111,7 @@ class TrackENU:
         else:
             result["segment_projection"] = None
 
-        dists2points = np.linalg.norm(r.track_enu - point, axis=1)
+        dists2points = np.linalg.norm(self.track_enu - point, axis=1)
 
         result["optimal_point_dist"] = {"point_number": dists2points.argmin(),
                                         "dist_to_point": dists2points[dists2points.argmin()],
@@ -119,5 +124,5 @@ class TrackENU:
 
     def process_track(self, min_dist: float = 50) -> None:
         self.track_enu = [self.convert_to_enu(point) for point in self.track_geod]
-        self.track_enu = self.optimize_track(np.array(self.track_enu), min_dist)
+        self.track_enu = optimize_track(np.array(self.track_enu), min_dist)
         self.track_geod = self.convert_to_geod(self.track_enu)
