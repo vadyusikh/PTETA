@@ -1,27 +1,29 @@
-import pymap3d
 import numpy as np
+from tqdm import tqdm
+
+from TrackENU import get_track_enu
+from datamodels import BusStop
 
 
 class RouteENU:
-    def __init__(self, route_geod: np.array, center: np.array):
-        self.route_enu = None
-        self.route_geod = route_geod
-        self.center = center
-        self.ellipsoid = pymap3d.ellipsoid.Ellipsoid('wgs84')
+    def __init__(self, route_info: dict, center: list):
+        self.row_route_info = route_info
+        self.center = np.array(center)
 
-        self.process_route()
+        self.stops_forward = [BusStop(stp) for stp in route_info['stops']['forward']]
+        self.stops_backward = [BusStop(stp) for stp in route_info['stops']['backward']]
 
-    def __len__(self) -> int:
-        return len(self.route_geod)
+        self.track_forward = get_track_enu(route_info['scheme']['backward'])
+        self.track_backward = get_track_enu(route_info['scheme']['backward'])
 
-    def convert(self, coord_geod: np.array) -> np.array:
-        e, n, u = pymap3d.geodetic2enu(
-            lat=coord_geod[0], lon=coord_geod[1], h=0,
-            lat0=self.center[0], lon0=self.center[1], h0=0,
-            ell=self.ellipsoid, deg=True)
 
-        return np.array(e, n)
+    def process_trace(self, trace: np.ndarray):
+        dists = [None] * len(trace)
 
-    def process_route(self):
-        self.route_enu = [self.convert(point) for point in self.route_geod]
-        self.route_enu = np.array(self.route_enu)
+        trace_enu = self.track_forward.convert_to_enu(trace)
+
+        for i, coord in tqdm(enumerate(trace)):
+            dists[i] = r.get_proj_on_track(r.convert_to_enu(coord))
+
+        end = time.perf_counter()
+        print(f"{end - st}")
