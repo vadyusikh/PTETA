@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import numpy as np
+
 
 @dataclass
 class BusStop:
@@ -15,3 +17,9 @@ class BusStop:
     direction: int
     lat: float
     lng: float
+
+
+@dataclass
+class RouteProjection:
+    forward: np.ndarray
+    backward: np.ndarray

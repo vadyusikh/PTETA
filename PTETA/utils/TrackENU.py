@@ -3,9 +3,9 @@ import numpy as np
 
 
 def get_track_enu(coord_str: str, center: np.array):
-    coords = [[float(l) for l in p.split(',')]
-              for p in coord_str.split(' ')]
-    return TrackENU(np.array(coords, center))
+    coords = [[float(line) for line in point.split(',')]
+              for point in coord_str.split(' ')]
+    return TrackENU(np.array(coords), center)
 
 
 def optimize_track(points: np.array, min_dist: float = 10) -> np.array:
@@ -42,10 +42,30 @@ class TrackENU:
         self.unit_vec /= self.segment_length[:, None]
         self.cumulative_length = np.append(0, np.cumsum(self.segment_length))
 
+    def process_track(self, min_dist: float = 50) -> None:
+        self.track_enu = self.convert_to_enu(self.track_geod)
+        self.track_enu = optimize_track(np.array(self.track_enu), min_dist)
+        self.track_geod = self.convert_to_geod(self.track_enu)
+
     def __len__(self) -> int:
         return len(self.track_geod)
 
+    @classmethod
+    def check_coordinates(self, coords: np.array) -> np.array:
+        if coords.ndim > 2:
+            raise ValueError(
+                f"Wrong input dimension - got {coords.ndim}, should be 1 or 2."
+                f"It's shape is {coords.shape}"
+            )
+
+        if coords.ndim == 1:
+            return np.expand_dims(coords, axis=0)
+
+        return coords
+
     def convert_to_enu(self, coord_geod: np.array) -> np.array:
+        coord_geod = self.check_coordinates(coord_geod)
+
         e, n, _ = pymap3d.geodetic2enu(
             lat=coord_geod[:, 0],
             lon=coord_geod[:, 1],
@@ -57,11 +77,13 @@ class TrackENU:
 
         return np.dstack([e, n])[0]
 
-    def convert_to_geod(self, coord_geod: np.array) -> np.array:
+    def convert_to_geod(self, coord_enu: np.array) -> np.array:
+        coord_enu = self.check_coordinates(coord_enu)
+
         lat, lon, _ = pymap3d.enu2geodetic(
-            e=coord_geod[:, 0],
-            n=coord_geod[:, 1],
-            u=np.zeros_like(coord_geod[:, 0]),
+            e=coord_enu[:, 0],
+            n=coord_enu[:, 1],
+            u=np.zeros_like(coord_enu[:, 0]),
             lat0=self.center[0],
             lon0=self.center[1],
             h0=0, ell=self.ellipsoid, deg=True
@@ -96,12 +118,12 @@ class TrackENU:
                 "progress": self.cumulative_length[seg_num] + np.linalg.norm(proj_vec)
                 }
 
-    def get_proj_on_track(self, point: np.array) -> dict:
+    def get_proj_on_track(self, point_enu: np.array) -> dict:
         result = dict()
 
         seg_proj = list()
         for seg_n, _ in enumerate(self.unit_vec):
-            res = self.get_proj_on_seg_data(seg_n, point)
+            res = self.get_proj_on_seg_data(seg_n, point_enu)
             if res is not None:
                 res['segment_number'] = seg_n
                 seg_proj.append(res)
@@ -111,7 +133,7 @@ class TrackENU:
         else:
             result["segment_projection"] = None
 
-        dists2points = np.linalg.norm(self.track_enu - point, axis=1)
+        dists2points = np.linalg.norm(self.track_enu - point_enu, axis=1)
 
         result["optimal_point_dist"] = {"point_number": dists2points.argmin(),
                                         "dist_to_point": dists2points[dists2points.argmin()],
@@ -122,7 +144,32 @@ class TrackENU:
 
         return result
 
-    def process_track(self, min_dist: float = 50) -> None:
-        self.track_enu = [self.convert_to_enu(point) for point in self.track_geod]
-        self.track_enu = optimize_track(np.array(self.track_enu), min_dist)
-        self.track_geod = self.convert_to_geod(self.track_enu)
+    def get_projection_data(self, points: np.array, is_geod: bool = True) -> np.ndarray:
+        points = self.check_coordinates(points)
+        if is_geod:
+            points = self.convert_to_enu(points)
+
+        dists_data = np.zeros_like(points[:, :2])
+
+        for i, point in enumerate(points):
+            dist = self.get_proj_on_track(point)
+
+            point_dist = dist["optimal_point_dist"]
+            seg_dist = dist["segment_projection"]
+            if (seg_dist is None) or (point_dist["dist_to_point"] < seg_dist["distance_to_line"]):
+                dists_data[i, :] = [point_dist["dist_to_point"],
+                                    point_dist["progress"]
+                                    ]
+            else:
+                dists_data[i, :] = [seg_dist["distance_to_line"],
+                                    seg_dist["progress"]
+                                    ]
+
+        return dists_data
+
+
+if __name__ == "__main__":
+    import sys
+    from os.path import dirname
+
+    print(dirname(__file__))
