@@ -1,6 +1,8 @@
+## PROJECT SPECIFIC IGNORS
 *.keys
 .idea
 data/local/*
+/PTETA/configs/key_configs.py
 
 
 # Byte-compiled / optimized / DLL files
