@@ -4,7 +4,7 @@ from psycopg2.errors import InFailedSqlTransaction
 from typing import List
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class TransportVehicle:
     """
     Column name ralations
@@ -25,6 +25,19 @@ class TransportVehicle:
     remark: str
     perevId: int
     routeId: int
+
+    def __eq__(self, other: 'TransportVehicle') -> bool:
+        return isinstance(other, self.__class__) \
+               and self.imei == other.imei \
+               and self.name == other.name \
+               and self.busNumber == other.busNumber \
+               and self.remark == other.remark \
+               and self.perevId == other.perevId \
+               and self.routeId == other.routeId
+
+    def __hash__(self):
+        return hash((self.imei, self.name, self.busNumber,
+                     self.remark, self.perevId, self.routeId))
 
     def is_in_table(self, connection: Connection) -> bool:
         with connection.cursor() as cursor:
@@ -50,6 +63,22 @@ class TransportVehicle:
 
             cursor.execute(sql)
             connection.commit()
+
+    def update_id_from_table(self, connection: Connection) -> None:
+        if not self.is_in_table(connection):
+            return
+
+        with connection.cursor() as cursor:
+            sql = f"""SELECT id FROM pteta.vehicle """ + \
+                  f"""WHERE "imei" = '{self.imei}' """ + \
+                  f"""AND "name" = '{self.name}' """ + \
+                  f"""AND "busNumber" = '{self.busNumber}' """ + \
+                  f"""AND "remark" = '{self.remark}' """ + \
+                  f"""AND "perevId" = {self.perevId} """ + \
+                  f"""AND "routeId" = {self.routeId};"""
+
+            cursor.execute(sql)
+            self.id = cursor.fetchone()[0]
 
     @classmethod
     def get_table(cls, connection: Connection) -> List['TransportVehicle']:
