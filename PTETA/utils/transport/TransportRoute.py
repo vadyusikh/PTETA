@@ -29,12 +29,62 @@ class TransportRoute:
                 connection.rollback()
                 raise err
 
-    def insert_in_table(self, connection: Connection) -> None:
+    @classmethod
+    def are_in_table(
+            cls,
+            connection: Connection,
+            route_list: List['TransportRoute']
+    ) -> List[bool]:
+        """30 faster single obj method for same number of objects"""
+        if not route_list:
+            return []
+
+        sql = 'SELECT "id", "routeName", "routeColour" FROM pteta.route ' + \
+              f""" WHERE ("id" = {route_list[0].id} """ + \
+              f""" AND "routeName" = '{route_list[0].name}') """ + \
+              " ".join([f"""OR ("id" = {obj.id} AND "routeName" = '{obj.name}') """
+                        for obj in route_list[1:]]) + ";"
+
         with connection.cursor() as cursor:
-            sql = f"""INSERT INTO pteta.route("id", "routeName", "routeColour")""" + \
-                  f"""VALUES ({self.id}, '{self.name}', '{self.colour}');"""
-            cursor.execute(sql)
-            connection.commit()
+            try:
+                cursor.execute(sql)
+                response_set = set([TransportRoute(*row) for row in cursor.fetchall()])
+                return [route in response_set for route in route_list]
+            except InFailedSqlTransaction as err:
+                connection.rollback()
+                raise err
+
+    def insert_in_table(self, connection: Connection) -> None:
+        try:
+            with connection.cursor() as cursor:
+                sql = f"""INSERT INTO pteta.route("id", "routeName", "routeColour")""" + \
+                      f"""VALUES ({self.id}, '{self.name}', '{self.colour}');"""
+                cursor.execute(sql)
+                connection.commit()
+        except InFailedSqlTransaction as err:
+            connection.rollback()
+            raise err
+
+    @classmethod
+    def insert_many_in_table(
+            cls,
+            connection: Connection,
+            route_list: List['TransportRoute']
+    ) -> None:
+        if not route_list:
+            return
+
+        sql = f"""INSERT INTO pteta.route("id", "routeName", "routeColour") VALUES """ + \
+              ", ".join([f"""({obj.id}, '{obj.name}', '{obj.colour}')"""
+                         for obj in route_list]) + ";"
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                connection.commit()
+        except InFailedSqlTransaction as err:
+            connection.rollback()
+            raise err
 
     @classmethod
     def get_table(cls, connection: Connection) -> List['TransportRoute']:

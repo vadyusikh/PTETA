@@ -25,12 +25,58 @@ class TransportOperator:
                 connection.rollback()
                 raise err
 
+    @classmethod
+    def are_in_table(
+            cls,
+            connection: Connection,
+            operator_list: List['TransportOperator']
+    ) -> List[bool]:
+        """30 faster single obj method for same number of objects"""
+        if not operator_list:
+            return []
+
+        sql = 'SELECT "id", "perevName" FROM pteta.owner ' + \
+              f""" WHERE ("id" = {operator_list[0].id} """ + \
+              f""" AND "perevName" = '{operator_list[0].name}') """ + \
+              " ".join([f"""OR ("id" = {obj.id} AND "perevName" = '{obj.name}') """
+                        for obj in operator_list[1:]]) + ";"
+
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute(sql)
+                response_set = set([TransportOperator(*row) for row in cursor.fetchall()])
+                return [operator in response_set for operator in operator_list]
+            except InFailedSqlTransaction as err:
+                connection.rollback()
+                raise err
+
     def insert_in_table(self, connection: Connection) -> None:
         with connection.cursor() as cursor:
             sql = f"""INSERT INTO pteta.owner("id", "perevName")""" + \
                   f"""VALUES ({self.id}, '{self.name}');"""
             cursor.execute(sql)
             connection.commit()
+
+    @classmethod
+    def insert_many_in_table(
+            cls,
+            connection: Connection,
+            operator_list: List['TransportOperator']
+    ) -> None:
+        if not operator_list:
+            return
+
+        sql = f"""INSERT INTO pteta.route("id", "perevName") VALUES """ + \
+              ", ".join([f"""({obj.id}, '{obj.name}')"""
+                         for obj in operator_list]) + ";"
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                connection.commit()
+        except InFailedSqlTransaction as err:
+            connection.rollback()
+            raise err
 
     @classmethod
     def get_table(cls, connection: Connection) -> List['TransportOperator']:
