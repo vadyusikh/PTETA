@@ -5,9 +5,11 @@ from psycopg2.extensions import connection as Connection
 from psycopg2.errors import InFailedSqlTransaction
 from typing import List
 
+from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
+
 
 @dataclass
-class TransportAVLData:
+class TransportAVLData(BaseDBAccessDataclass):
     """
     Column lng relations
 
@@ -45,41 +47,32 @@ class TransportAVLData:
         return hash((self.lat, self.lng, self.speed, self.orientation,
                      self.gpstime, self.inDepo, self.vehicleId))
 
-    def is_in_table(self, connection: Connection) -> bool:
-        with connection.cursor() as cursor:
-            sql = f"""SELECT EXISTS(SELECT * FROM pteta.gpsdata """ + \
-                  f"""WHERE "lat" = '{self.lat}' """ + \
-                  f"""AND "lng" = '{self.lng}' """ + \
-                  f"""AND "speed" = '{self.speed}' """ + \
-                  f"""AND "orientation" = '{self.orientation}' """ + \
-                  f"""AND "gpstime" = '{self.gpstime}' """ + \
-                  f"""AND "inDepo" = {self.inDepo} """ + \
-                  f"""AND "vehicleId" = {self.vehicleId});"""
-            try:
-                cursor.execute(sql)
-                return cursor.fetchone()[0]
-            except InFailedSqlTransaction as err:
-                connection.rollback()
-                raise err
-
-    def insert_in_table(self, connection: Connection) -> None:
-        with connection.cursor() as cursor:
-            sql = f"""INSERT INTO pteta.gpsdata("lat", "lng", "speed", "orientation", """ + \
-                  f""" "gpstime", "inDepo", "vehicleId", "response_datetime")""" + \
-                  f"""VALUES ('{self.lat}', '{self.lng}', '{self.speed}', '{self.orientation}', """ + \
-                  f""" '{self.gpstime}',  '{self.inDepo}', '{self.vehicleId}', '{self.response_datetime}');"""
-
-            cursor.execute(sql)
-            connection.commit()
+    @classmethod
+    def __table_name__(cls) -> str:
+        return "pteta.gpsdata"
 
     @classmethod
-    def get_table(cls, connection: Connection) -> List['TransportAVLData']:
-        with connection.cursor() as cursor:
-            sql = f"""SELECT "lat", "lng", "speed", "orientation", """ + \
-                  f""" "gpstime", "inDepo", "vehicleId", "response_datetime" FROM pteta.gpsdata;"""
-            try:
-                cursor.execute(sql)
-                return [TransportAVLData(*rec) for rec in cursor.fetchall()]
-            except InFailedSqlTransaction as err:
-                connection.rollback()
-                raise err
+    def __select_columns__(cls) -> str:
+        return '"lat", "lng", "speed", "orientation", "gpstime", ' \
+               '"inDepo", "vehicleId", "response_datetime"'
+
+    @classmethod
+    def __where_expression__(cls, avl_data: 'TransportAVLData') -> str:
+        return f' "lat" = \'{avl_data.lat}\' ' + \
+                  f'AND "lng" = \'{avl_data.lng}\' ' + \
+                  f'AND "speed" = \'{avl_data.speed}\' ' + \
+                  f'AND "orientation" = \'{avl_data.orientation}\' ' + \
+                  f'AND "gpstime" = \'{avl_data.gpstime}\' ' + \
+                  f'AND "inDepo" = {avl_data.inDepo} ' + \
+                  f'AND "vehicleId" = {avl_data.vehicleId}'
+
+    @classmethod
+    def __insert_columns__(cls) -> str:
+        return '"lat", "lng", "speed", "orientation", "gpstime", ' \
+               '"inDepo", "vehicleId", "response_datetime"'
+
+    @classmethod
+    def __insert_expression__(cls, avl_data: 'TransportAVLData') -> str:
+        return f"('{avl_data.lat}', '{avl_data.lng}', '{avl_data.speed}', " \
+               f"'{avl_data.orientation}', '{avl_data.gpstime}', '{avl_data.inDepo}', " \
+               f"'{avl_data.vehicleId}', '{avl_data.response_datetime}')"
