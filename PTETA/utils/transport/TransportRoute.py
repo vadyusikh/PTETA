@@ -21,6 +21,12 @@ class TransportRoute(BaseDBAccessDataclass):
     colour: str
 
     @classmethod
+    def from_response_row(cls, response_row: dict) -> 'TransportRoute':
+        return TransportRoute(
+            response_row['routeId'], response_row['routeName'], response_row['routeColour']
+        )
+
+    @classmethod
     def __table_name__(cls) -> str:
         return "pteta.route"
 

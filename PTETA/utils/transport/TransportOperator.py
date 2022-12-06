@@ -13,6 +13,12 @@ class TransportOperator(BaseDBAccessDataclass):
     name: str
 
     @classmethod
+    def from_response_row(cls, response_row: dict) -> 'TransportOperator':
+        return TransportOperator(
+            response_row['perevId'], response_row['perevName']
+        )
+
+    @classmethod
     def __table_name__(cls) -> str:
         return "pteta.owner"
 

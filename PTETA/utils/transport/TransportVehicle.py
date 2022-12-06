@@ -26,6 +26,13 @@ class TransportVehicle(BaseDBAccessDataclass):
     perevId: int
     routeId: int
 
+    @classmethod
+    def from_response_row(cls, response_row: dict) -> 'TransportVehicle':
+        return TransportVehicle(
+            None, response_row['imei'], response_row['name'], response_row['busNumber'],
+            response_row['remark'], response_row['perevId'], response_row['routeId']
+        )
+
     def __eq__(self, other: 'TransportVehicle') -> bool:
         return isinstance(other, self.__class__) \
                and self.imei == other.imei \

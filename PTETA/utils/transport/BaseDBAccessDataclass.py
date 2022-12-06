@@ -8,6 +8,11 @@ from abc import ABC, abstractmethod
 
 @dataclass
 class BaseDBAccessDataclass(ABC):
+    @classmethod
+    @abstractmethod
+    def from_response_row(cls, response_row: dict) -> 'BaseDBAccessDataclass':
+        pass
+
     def is_in_table(self, connection: Connection) -> bool:
         return self.are_in_table(connection, [self])[0]
 
