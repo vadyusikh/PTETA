@@ -85,6 +85,10 @@ class BaseDBAccessDataclass(ABC):
                 raise err
 
     @classmethod
+    def __schema_name__(cls) -> str:
+        return "pteta"
+
+    @classmethod
     @abstractmethod
     def __table_name__(cls) -> str:
         pass

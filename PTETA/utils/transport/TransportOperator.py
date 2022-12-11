@@ -20,7 +20,7 @@ class TransportOperator(BaseDBAccessDataclass):
 
     @classmethod
     def __table_name__(cls) -> str:
-        return "pteta.owner"
+        return f"{cls.__schema_name__()}.owner"
 
     @classmethod
     def __select_columns__(cls) -> str:

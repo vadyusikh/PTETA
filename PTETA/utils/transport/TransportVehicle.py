@@ -16,7 +16,7 @@ class TransportVehicle(BaseDBAccessDataclass):
     busNumber: str | busNumber   | busNumber
     remark: str    | remark      | remark
     perevId: int   | perevId(FK) | perevId
-    routeId: int   | routeId(FK) | routeId
+
     """
     id: int
     imei: str
@@ -24,13 +24,12 @@ class TransportVehicle(BaseDBAccessDataclass):
     busNumber: str
     remark: str
     perevId: int
-    routeId: int
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'TransportVehicle':
         return TransportVehicle(
-            None, response_row['imei'], response_row['name'], response_row['busNumber'],
-            response_row['remark'], response_row['perevId'], response_row['routeId']
+            None, response_row['imei'], response_row['name'],
+            response_row['busNumber'], response_row['remark'], response_row['perevId']
         )
 
     def __eq__(self, other: 'TransportVehicle') -> bool:
@@ -39,12 +38,10 @@ class TransportVehicle(BaseDBAccessDataclass):
                and self.name == other.name \
                and self.busNumber == other.busNumber \
                and self.remark == other.remark \
-               and self.perevId == other.perevId \
-               and self.routeId == other.routeId
+               and self.perevId == other.perevId
 
     def __hash__(self):
-        return hash((self.imei, self.name, self.busNumber,
-                     self.remark, self.perevId, self.routeId))
+        return hash((self.imei, self.name, self.busNumber, self.remark, self.perevId))
 
     def update_id_from_table(self, connection: Connection) -> None:
         if not self.is_in_table(connection):
@@ -63,7 +60,7 @@ class TransportVehicle(BaseDBAccessDataclass):
 
     @classmethod
     def __select_columns__(cls) -> str:
-        return 'id, "imei", "name", "busNumber", "remark", "perevId", "routeId"'
+        return 'id, "imei", "name", "busNumber", "remark", "perevId"'
 
     @classmethod
     def __where_expression__(cls, vehicle: 'TransportVehicle') -> str:
@@ -71,14 +68,13 @@ class TransportVehicle(BaseDBAccessDataclass):
                f'AND "name" = \'{vehicle.name}\' ' + \
                f'AND "busNumber" = \'{vehicle.busNumber}\' ' + \
                f'AND "remark" = \'{vehicle.remark}\' ' + \
-               f'AND "perevId" = {vehicle.perevId} ' + \
-               f'AND "routeId" = {vehicle.routeId} '
+               f'AND "perevId" = {vehicle.perevId} '
 
     @classmethod
     def __insert_columns__(cls) -> str:
-        return '"imei", "name", "busNumber", "remark", "perevId", "routeId"'
+        return '"imei", "name", "busNumber", "remark", "perevId"'
 
     @classmethod
     def __insert_expression__(cls, vehicle: 'TransportVehicle') -> str:
         return f"('{vehicle.imei}', '{vehicle.name}', '{vehicle.busNumber}', " + \
-               f"'{vehicle.remark}', {vehicle.perevId},  {vehicle.routeId})"
+               f"'{vehicle.remark}', {vehicle.perevId})"

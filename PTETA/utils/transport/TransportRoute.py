@@ -28,7 +28,7 @@ class TransportRoute(BaseDBAccessDataclass):
 
     @classmethod
     def __table_name__(cls) -> str:
-        return "pteta.route"
+        return f"{cls.__schema_name__()}.route"
 
     @classmethod
     def __select_columns__(cls) -> str:
