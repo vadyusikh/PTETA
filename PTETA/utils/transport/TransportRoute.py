@@ -10,11 +10,11 @@ from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 class TransportRoute(BaseDBAccessDataclass):
     """
     Column name ralations
-    dataclass   | DB          | HTTP request
-    ------------|-------------|------------
-    id: int     | id          | routeId
-    name: str   | routeName   | routeName
-    colour: str | routeColour | routeColour
+    dataclass   | DB           | HTTP request
+    ------------|--------------|------------
+    id: int     | id           | routeId
+    name: str   | route_name   | routeName
+    colour: str | route_colour | routeColour
     """
     id: int
     name: str
@@ -32,15 +32,15 @@ class TransportRoute(BaseDBAccessDataclass):
 
     @classmethod
     def __select_columns__(cls) -> str:
-        return 'id, "routeName", "routeColour"'
+        return 'id, "route_name", "route_colour"'
 
     @classmethod
     def __where_expression__(cls, route: 'TransportRoute') -> str:
-        return f""""id" = {route.id} AND "routeName" = '{route.name}'"""
+        return f""""id" = {route.id} AND "route_name" = '{route.name}'"""
 
     @classmethod
     def __insert_columns__(cls) -> str:
-        return '"id", "routeName", "routeColour"'
+        return '"id", "route_name", "route_colour"'
 
     @classmethod
     def __insert_expression__(cls, route: 'TransportRoute') -> str:

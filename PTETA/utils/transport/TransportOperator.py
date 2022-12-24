@@ -5,9 +5,11 @@ from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 @dataclass(unsafe_hash=True)
 class TransportOperator(BaseDBAccessDataclass):
     """
-    Column name ralations dataclass | DB | HTTP request
-    id: int   | id        | perevId
-    name: str | perevName | perevName
+    Column name ralations
+    dataclass | DB         | HTTP request
+    ----------|------------|-------------
+    id: int   | id         | perevId
+    name: str | perev_name | perevName
     """
     id: int
     name: str
@@ -24,15 +26,15 @@ class TransportOperator(BaseDBAccessDataclass):
 
     @classmethod
     def __select_columns__(cls) -> str:
-        return 'id, "perevName"'
+        return 'id, "perev_name"'
 
     @classmethod
     def __where_expression__(cls, operator: 'TransportOperator') -> str:
-        return f'"id" = {operator.id} AND "perevName" = \'{operator.name}\''
+        return f'"id" = {operator.id} AND "perev_name" = \'{operator.name}\''
 
     @classmethod
     def __insert_columns__(cls) -> str:
-        return 'id, "perevName"'
+        return 'id, "perev_name"'
 
     @classmethod
     def __insert_expression__(cls, operator: 'TransportOperator') -> str:

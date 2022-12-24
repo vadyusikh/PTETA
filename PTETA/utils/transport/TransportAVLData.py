@@ -20,9 +20,9 @@ class TransportAVLData(BaseDBAccessDataclass):
     speed: float                | speed                 | speed
     orientation : float         | orientation           | orientation
     gpstime: datetime           | gpstime               | gpstime
-    inDepo : bool               | inDepo                | inDepo
-    vehicleId: int              | vehicleId(FK)         | vehicleId
-    routeId: int                | routeId(FK)           | routeId
+    in_depo : bool              | in_depo               | in_depo
+    vehicle_id: int             | vehicle_id(FK)        | vehicle_id
+    route_id: int               | route_id(FK)          | route_id
     response_datetime: datetime | response_datetime(FK) | response_datetime
     """
     lat: float
@@ -30,9 +30,9 @@ class TransportAVLData(BaseDBAccessDataclass):
     speed: float
     orientation: float
     gpstime: datetime
-    inDepo: bool
-    vehicleId: int
-    routeId: int
+    in_depo: bool
+    vehicle_id: int
+    route_id: int
     response_datetime: datetime
 
     @classmethod
@@ -50,22 +50,22 @@ class TransportAVLData(BaseDBAccessDataclass):
                and self.speed == other.speed \
                and self.orientation == other.orientation \
                and self.gpstime == other.gpstime \
-               and self.inDepo == other.inDepo \
-               and self.vehicleId == other.vehicleId \
-               and self.routeId == other.routeId
+               and self.in_depo == other.in_depo \
+               and self.vehicle_id == other.vehicle_id \
+               and self.route_id == other.route_id
 
     def __hash__(self):
         return hash((self.lat, self.lng, self.speed, self.orientation,
-                     self.gpstime, self.inDepo, self.vehicleId, self.routeId))
+                     self.gpstime, self.in_depo, self.vehicle_id, self.route_id))
 
     @classmethod
     def __table_name__(cls) -> str:
-        return f"{cls.__schema_name__}.gpsdata"
+        return f"{cls.__schema_name__()}.gpsdata"
 
     @classmethod
     def __select_columns__(cls) -> str:
         return '"lat", "lng", "speed", "orientation", "gpstime", ' \
-               '"inDepo", "vehicleId", "routeId", "response_datetime"'
+               '"in_depo", "vehicle_id", "route_id", "response_datetime"'
 
     @classmethod
     def __where_expression__(cls, avl_data: 'TransportAVLData') -> str:
@@ -74,17 +74,17 @@ class TransportAVLData(BaseDBAccessDataclass):
                   f'AND "speed" = \'{avl_data.speed}\' ' + \
                   f'AND "orientation" = \'{avl_data.orientation}\' ' + \
                   f'AND "gpstime" = \'{avl_data.gpstime}\' ' + \
-                  f'AND "inDepo" = {avl_data.inDepo} ' + \
-                  f'AND "vehicleId" = {avl_data.vehicleId} ' + \
-                  f'AND "routeId" = {avl_data.routeId}'
+                  f'AND "in_depo" = {avl_data.in_depo} ' + \
+                  f'AND "vehicle_id" = {avl_data.vehicle_id} ' + \
+                  f'AND "route_id" = {avl_data.route_id}'
 
     @classmethod
     def __insert_columns__(cls) -> str:
         return '"lat", "lng", "speed", "orientation", "gpstime", ' \
-               '"inDepo", "vehicleId", "routeId", "response_datetime"'
+               '"in_depo", "vehicle_id", "route_id", "response_datetime"'
 
     @classmethod
     def __insert_expression__(cls, avl_data: 'TransportAVLData') -> str:
         return f"('{avl_data.lat}', '{avl_data.lng}', '{avl_data.speed}', " \
-               f"'{avl_data.orientation}', '{avl_data.gpstime}', '{avl_data.inDepo}', " \
-               f"'{avl_data.vehicleId}', '{avl_data.routeId}', '{avl_data.response_datetime}')"
+               f"'{avl_data.orientation}', '{avl_data.gpstime}', '{avl_data.in_depo}', " \
+               f"'{avl_data.vehicle_id}', '{avl_data.route_id}', '{avl_data.response_datetime}')"

@@ -86,7 +86,7 @@ class BaseDBAccessDataclass(ABC):
 
     @classmethod
     def __schema_name__(cls) -> str:
-        return "pteta"
+        return "pteta_v2"
 
     @classmethod
     @abstractmethod
