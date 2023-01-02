@@ -29,7 +29,9 @@ class TransportVehicle(BaseDBAccessDataclass):
     def from_response_row(cls, response_row: dict) -> 'TransportVehicle':
         return TransportVehicle(
             None, response_row['imei'], response_row['name'],
-            response_row['busNumber'], response_row['remark'], response_row['perevId']
+            response_row['busNumber'] if response_row['busNumber'] else "UNKNOWN",
+            response_row['remark'] if response_row['remark'] else '',
+            response_row['perevId']
         )
 
     def __eq__(self, other: 'TransportVehicle') -> bool:
@@ -66,9 +68,9 @@ class TransportVehicle(BaseDBAccessDataclass):
     def __where_expression__(cls, vehicle: 'TransportVehicle') -> str:
         return f'"imei" = \'{vehicle.imei}\' ' + \
                f'AND "name" = \'{vehicle.name}\' ' + \
-               f'AND "bus_number" = \'{vehicle.bus_number}\' ' + \
+               f'AND "bus_number" = \'{vehicle.bus_number if vehicle.bus_number else "NULL"}\' ' + \
                f'AND "remark" = \'{vehicle.remark}\' ' + \
-               f'AND "perev_id" = {vehicle.perev_id} '
+               f'AND "perev_id" = {vehicle.perev_id if vehicle.perev_id else "NULL"} '
 
     @classmethod
     def __insert_columns__(cls) -> str:
@@ -76,5 +78,7 @@ class TransportVehicle(BaseDBAccessDataclass):
 
     @classmethod
     def __insert_expression__(cls, vehicle: 'TransportVehicle') -> str:
-        return f"('{vehicle.imei}', '{vehicle.name}', '{vehicle.bus_number}', " + \
-               f"'{vehicle.remark}', {vehicle.perev_id})"
+        return f"('{vehicle.imei}', '{vehicle.name}', " \
+               f"'{vehicle.bus_number if vehicle.bus_number else 'NULL'}', " + \
+               f"'{vehicle.remark}'," \
+               f"{vehicle.perev_id if vehicle.perev_id else 'NULL'})"

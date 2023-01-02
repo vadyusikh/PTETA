@@ -21,24 +21,24 @@ class BaseDBAccessDataclass(ABC):
             cls,
             connection: Connection,
             obj_list: List['BaseDBAccessDataclass']
-    ) -> List[bool]:
+        ) -> List[bool]:
         """140 faster single obj method for same number of objects"""
         if not obj_list:
             return []
 
         sql = f"SELECT {cls.__select_columns__()} " \
-              f"FROM {cls.__table_name__()} " + \
-              f" WHERE ({cls.__where_expression__(obj_list[0])}) " + \
-              " ".join([f"OR ({cls.__where_expression__(obj)}) "
-                        for obj in obj_list[1:]]) + ";"
+              f"FROM {cls.__table_name__()} " + f" WHERE " + \
+              " OR".join([f"({cls.__where_expression__(obj)}) "
+                          for obj in obj_list]) + ";"
 
         with connection.cursor() as cursor:
             try:
                 cursor.execute(sql)
                 response_set = set([cls(*row) for row in cursor.fetchall()])
                 return [obj in response_set for obj in obj_list]
-            except InFailedSqlTransaction as err:
+            except Exception as err:
                 connection.rollback()
+                print(f"Error raised while select {cls} '{obj_list}'")
                 raise err
 
     def insert_in_table(self, connection: Connection) -> None:
@@ -57,7 +57,8 @@ class BaseDBAccessDataclass(ABC):
         sql = f"INSERT INTO {cls.__table_name__()}" + \
               f"({cls.__insert_columns__()}) VALUES" + \
               ", ".join([f"{cls.__insert_expression__(obj)}"
-                         for obj in obj_list]) + ";"
+                         for obj in obj_list]) + \
+              "ON CONFLICT DO NOTHING;"
 
         try:
             with connection.cursor() as cursor:
@@ -65,8 +66,9 @@ class BaseDBAccessDataclass(ABC):
                 connection.commit()
         except InFailedSqlTransaction as err:
             connection.rollback()
+            print(f"Error raised while select {cls} '{obj_list}'")
             raise err
-
+            
     @classmethod
     def get_table(
             cls,

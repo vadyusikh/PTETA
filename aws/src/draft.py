@@ -1,6 +1,4 @@
 import psycopg2
-
-
 import os
 
 if 'RDS_HOSTNAME' in os.environ:

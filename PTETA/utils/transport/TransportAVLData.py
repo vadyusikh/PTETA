@@ -38,8 +38,10 @@ class TransportAVLData(BaseDBAccessDataclass):
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'TransportAVLData':
         return TransportAVLData(
-            response_row['lat'], response_row['lng'], response_row['speed'],
-            response_row['orientation'], response_row['gpstime'], response_row['inDepo'],
+            response_row['lat'], response_row['lng'],
+            response_row['speed'] if response_row['speed'] else -1,
+            response_row['orientation'] if response_row['orientation'] else -1,
+            response_row['gpstime'], response_row['inDepo'],
             None, None, response_row['response_datetime']
         )
 
@@ -87,4 +89,5 @@ class TransportAVLData(BaseDBAccessDataclass):
     def __insert_expression__(cls, avl_data: 'TransportAVLData') -> str:
         return f"('{avl_data.lat}', '{avl_data.lng}', '{avl_data.speed}', " \
                f"'{avl_data.orientation}', '{avl_data.gpstime}', '{avl_data.in_depo}', " \
-               f"'{avl_data.vehicle_id}', '{avl_data.route_id}', '{avl_data.response_datetime}')"
+               f"'{avl_data.vehicle_id}', '{avl_data.route_id}', " \
+               f""" { f"'{avl_data.response_datetime}'" if avl_data.response_datetime else 'NULL'})"""

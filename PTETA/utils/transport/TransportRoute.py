@@ -23,7 +23,9 @@ class TransportRoute(BaseDBAccessDataclass):
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'TransportRoute':
         return TransportRoute(
-            response_row['routeId'], response_row['routeName'], response_row['routeColour']
+            response_row['routeId'] if response_row['routeName'] else -1,
+            response_row['routeName'] if response_row['routeName'] else "UNKNOWN",
+            response_row['routeColour'] if response_row['routeColour'] else "None"
         )
 
     @classmethod

@@ -17,7 +17,8 @@ class TransportOperator(BaseDBAccessDataclass):
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'TransportOperator':
         return TransportOperator(
-            response_row['perevId'], response_row['perevName']
+            response_row['perevId'] if response_row['perevName'] else -1,
+            response_row['perevName'] if response_row['perevName'] else "UNKNOWN"
         )
 
     @classmethod
