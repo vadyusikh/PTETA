@@ -69,7 +69,7 @@ def process_data(request_queue: Queue, last_avl_df_queue: Queue, monitor, verbos
             last_avl_df_queue.get()
 
     df_to_write = df.merge(last_avl_df, on=COLUMNS_TO_UNIQUE, how='left', indicator=True)
-    df_to_write = df[df_to_write['_merge'] == 'left_only']
+    df_to_write = df[(df_to_write['_merge'] == 'left_only').tolist()]
 
     monitor.write_to_db(df_to_write.to_dict('records'))
 
