@@ -1,3 +1,5 @@
+import time
+
 from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 from PTETA.utils.transport.TransportOperator import TransportOperator
 from PTETA.utils.transport.TransportRoute import TransportRoute
@@ -7,7 +9,6 @@ from psycopg2.extensions import connection as Connection
 import psycopg2
 
 from typing import List, Union
-
 
 
 class TransGPSCVMonitor:
@@ -24,6 +25,7 @@ class TransGPSCVMonitor:
     }
 
     def __init__(self, connection_config: dict, **kwarg: dict) -> None:
+        self.connection_config = connection_config
         self.db_connection = psycopg2.connect(**connection_config)
 
         self.reload_operators()
@@ -31,6 +33,9 @@ class TransGPSCVMonitor:
         self.reload_vehicles()
 
         self.datetime_format = '%Y-%m-%d %H:%M:%S'
+
+    def reconnect(self):
+        self.db_connection = psycopg2.connect(**self.connection_config)
 
     def reload_operators(self):
         operator_list = TransportOperator.get_table(self.db_connection)
@@ -109,4 +114,9 @@ class TransGPSCVMonitor:
             avl_data_list[i].vehicle_id = self.vehicle_to_id[vehicle]
             avl_data_list[i].route_id = self.route_to_id[route]
 
-        TransportAVLData.insert_many_in_table(self.db_connection, avl_data_list)
+        try:
+            TransportAVLData.insert_many_in_table(self.db_connection, avl_data_list)
+        except self.db_connection.Error:
+            self.reconnect()
+            time.sleep(1)
+            TransportAVLData.insert_many_in_table(self.db_connection, avl_data_list)
