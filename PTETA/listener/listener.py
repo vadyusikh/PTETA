@@ -9,7 +9,7 @@ import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from aws.src.TransGPSCVMonitor import TransGPSCVMonitor
-
+from PTETA.listener.utils.support_classes import LockingCounter
 
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
@@ -18,15 +18,15 @@ REQUEST_FREQUENCY = 1.05
 PROCESS_FREQUENCY = 60
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
-END_DATE = (datetime.now() + dt.timedelta(seconds=60*5)).strftime(DATETIME_PATTERN)
-END_DATE_2 = (datetime.now() + dt.timedelta(seconds=65+2*PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
+END_DATE = (datetime.now() + dt.timedelta(days=3)).strftime(DATETIME_PATTERN)
+END_DATE_2 = (datetime.now() + dt.timedelta(days=3, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
 COLUMNS_TO_UNIQUE = [
     'imei', 'name', 'lat', 'lng', 'speed', 'orientation', 'gpstime',
     'routeId', 'inDepo', 'busNumber', 'perevId', 'perevName', 'remark', 'online'
 ]
 
 
-def request_data(process_queue: Queue) -> None:
+def request_data(process_queue: Queue, request_counter: LockingCounter) -> None:
     dt_now = datetime.now()
     dt_tz_str = dt.datetime.now(dt.timezone.utc).strftime(f"{DATETIME_PATTERN} %z")
 
@@ -37,14 +37,27 @@ def request_data(process_queue: Queue) -> None:
         response = json.loads(request.text)
         for imei in response:
             response[imei]['response_datetime'] = dt_tz_str
-        process_queue.put(response)
+        try:
+            process_queue.put(response, timeout=5)
+        except process_queue.Full as e:
+            print(f"{dt_now.strftime(DATETIME_PATTERN)}\n"
+                  f"\tQueue is full, its' size is {process_queue.qsize()}"
+                  f"\t{e}\n")
+            raise e
+        request_counter.increment()
 
     except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as err:
         print(f"{dt_now.strftime(DATETIME_PATTERN)} : error while trying to GET data\n"
               f"\t{err}\n")
 
 
-def process_data(request_queue: Queue, last_avl_df_queue: Queue, monitor, verbose: bool = False) -> None:
+def process_data(
+        request_queue: Queue,
+        last_avl_df_queue: Queue,
+        monitor: TransGPSCVMonitor,
+        records_counter: LockingCounter,
+        verbose: bool = False
+) -> None:
     print(f"process_data::{datetime.now().strftime(DATETIME_PATTERN)} : Queue len is {request_queue.qsize()}")
     avl_data_list = []
     while not request_queue.empty():
@@ -71,7 +84,9 @@ def process_data(request_queue: Queue, last_avl_df_queue: Queue, monitor, verbos
     df_to_write = df.merge(last_avl_df, on=COLUMNS_TO_UNIQUE, how='left', indicator=True)
     df_to_write = df[(df_to_write['_merge'] == 'left_only').tolist()]
 
-    monitor.write_to_db(df_to_write.to_dict('records'))
+    if len(df_to_write) > 0:
+        monitor.write_to_db(df_to_write.to_dict('records'))
+        records_counter.increment(len(df_to_write))
 
     if verbose:
         print(f"\tprocess_data:: to write {len(df_to_write)} of unique {len(df)}")
@@ -90,11 +105,35 @@ def process_data(request_queue: Queue, last_avl_df_queue: Queue, monitor, verbos
         print(f"\tprocess_data:: New last awl {len(last_avl_df)} was {len(last_avl_list)}")
 
 
+def verbose_update(
+        records_counter: LockingCounter,
+        request_counter: LockingCounter
+) -> None:
+    dt_now = datetime.now()
+
+    if request_counter.get_count() % 1_000 > 50:
+        request_counter.set_is_shown(True)
+    elif request_counter.get_is_shown():
+        print(f"{dt_now.strftime(DATETIME_PATTERN)}: \n"
+              f"\tRequest done {request_counter.get_count()}\n"
+              f"\tRecords written {records_counter.get_count()}\n")
+        request_counter.set_is_shown(False)
+        request_counter.set_last_update(dt_now)
+
+    if (dt_now - request_counter.get_last_update()).seconds > 30 * 60:
+        print(f"{dt_now.strftime(DATETIME_PATTERN)} : "
+              f"(Last update {(dt_now - request_counter.get_last_update()).seconds} sec ago)\n"
+              f"\tRequest done {request_counter.get_count()}\n"
+              f"\tRecords written {records_counter.get_count()}\n")
+        request_counter.set_last_update(dt_now)
+
+
 def main():
-    request_queue = Queue()
-    last_avl_df_queue = Queue()
-
-
+    request_queue = Queue(maxsize=100_000)
+    last_avl_df_queue = Queue(maxsize=1_000)
+    records_counter = LockingCounter()
+    request_counter = LockingCounter()
+    request_counter.set_is_shown(True)
 
     connection_config = dict({
         'host': os.environ['RDS_HOSTNAME'],
@@ -108,7 +147,7 @@ def main():
     scheduler = BackgroundScheduler(job_defaults={'max_instances': 8})
     scheduler.add_job(
         request_data,
-        args=(request_queue, ),
+        args=(request_queue, request_counter),
         trigger='interval',
         seconds=REQUEST_FREQUENCY,
         end_date=END_DATE,
@@ -116,12 +155,22 @@ def main():
 
     scheduler.add_job(
         process_data,
-        args=(request_queue, last_avl_df_queue, monitor),
+        args=(request_queue, last_avl_df_queue, monitor, records_counter),
         trigger='interval',
         seconds=PROCESS_FREQUENCY,
         start_date=START_DATE,
         end_date=END_DATE_2,
         id='process_data'
+    )
+
+    scheduler.add_job(
+        verbose_update,
+        args=(records_counter, request_counter),
+        trigger='interval',
+        seconds=10,
+        start_date=START_DATE,
+        end_date=END_DATE_2,
+        id='verbose_update'
     )
 
     scheduler.start()
@@ -130,7 +179,7 @@ def main():
     try:
         print('Scheduler started!')
         while True:
-            print(f"{datetime.now().strftime(DATETIME_PATTERN)} : Queue len is {request_queue.qsize()}")
+            # print(f"{datetime.now().strftime(DATETIME_PATTERN)} : Queue len is {request_queue.qsize()}")
             time.sleep(90)
 
     except KeyboardInterrupt:
