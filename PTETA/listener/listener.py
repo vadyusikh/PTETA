@@ -58,7 +58,9 @@ def process_data(
         records_counter: LockingCounter,
         verbose: bool = False
 ) -> None:
-    print(f"process_data::{datetime.now().strftime(DATETIME_PATTERN)} : Queue len is {request_queue.qsize()}")
+    if verbose:
+        print(f"process_data::{datetime.now().strftime(DATETIME_PATTERN)} : "
+              f"Queue len is {request_queue.qsize()}")
     avl_data_list = []
     while not request_queue.empty():
         response = request_queue.get()
@@ -114,17 +116,19 @@ def verbose_update(
     if request_counter.get_count() % 1_000 > 50:
         request_counter.set_is_shown(True)
     elif request_counter.get_is_shown():
-        print(f"{dt_now.strftime(DATETIME_PATTERN)}: \n"
-              f"\tRequest done {request_counter.get_count()}\n"
-              f"\tRecords written {records_counter.get_count()}\n")
+        print(f"{dt_now.strftime(DATETIME_PATTERN)}: "
+              f"Done {records_counter.get_count():6}/{request_counter.get_count():6}(records/request)\n")
         request_counter.set_is_shown(False)
         request_counter.set_last_update(dt_now)
 
+    if (dt_now.hour == 0) and (request_counter > 5_000):
+        request_counter.set_count(0)
+        records_counter.set_count(0)
+
     if (dt_now - request_counter.get_last_update()).seconds > 30 * 60:
         print(f"{dt_now.strftime(DATETIME_PATTERN)} : "
-              f"(Last update {(dt_now - request_counter.get_last_update()).seconds} sec ago)\n"
-              f"\tRequest done {request_counter.get_count()}\n"
-              f"\tRecords written {records_counter.get_count()}\n")
+              f"Done {records_counter.get_count():6}/{request_counter.get_count():6}(records/request)"
+              f" \t(Last log was {(dt_now - request_counter.get_last_update()).seconds} sec ago)\n")
         request_counter.set_last_update(dt_now)
 
 
@@ -179,8 +183,8 @@ def main():
     try:
         print('Scheduler started!')
         while True:
-            # print(f"{datetime.now().strftime(DATETIME_PATTERN)} : Queue len is {request_queue.qsize()}")
-            time.sleep(90)
+            print(f"{datetime.now().strftime(DATETIME_PATTERN)} : Queue len is {request_queue.qsize()}")
+            time.sleep(600)
 
     except KeyboardInterrupt:
         if scheduler.state:

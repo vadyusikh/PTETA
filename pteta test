@@ -1,0 +1,1 @@
+SELECT * FROM pteta_v2.vehicle order by id
