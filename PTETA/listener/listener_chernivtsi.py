@@ -18,8 +18,8 @@ REQUEST_FREQUENCY = 1.05
 PROCESS_FREQUENCY = 60
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
-END_DATE = (datetime.now() + dt.timedelta(days=3)).strftime(DATETIME_PATTERN)
-END_DATE_2 = (datetime.now() + dt.timedelta(days=3, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
+END_DATE = (datetime.now() + dt.timedelta(days=10)).strftime(DATETIME_PATTERN)
+END_DATE_2 = (datetime.now() + dt.timedelta(days=10, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
 COLUMNS_TO_UNIQUE = [
     'imei', 'name', 'lat', 'lng', 'speed', 'orientation', 'gpstime',
     'routeId', 'inDepo', 'busNumber', 'perevId', 'perevName', 'remark', 'online'
@@ -121,7 +121,7 @@ def verbose_update(
         request_counter.set_is_shown(False)
         request_counter.set_last_update(dt_now)
 
-    if (dt_now.hour == 0) and (request_counter > 5_000):
+    if (dt_now.hour == 0) and (request_counter.get_count() > 5_000):
         request_counter.set_count(0)
         records_counter.set_count(0)
 
