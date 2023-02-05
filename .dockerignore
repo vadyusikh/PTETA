@@ -1,0 +1,6 @@
+data/*
+notebooks/*
+
+*.keys
+.idea
+/PTETA/configs/key_configs.py
