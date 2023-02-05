@@ -24,7 +24,7 @@ LIMIT 100
 
 SELECT *
 	FROM pteta_v2.gpsdata as gd
-	WHERE gd.gpstime > '2023-01-09 23:00:00'
+	WHERE gd.gpstime > '2023-02-03 00:00:00'
 	ORDER BY gd.edited DESC
 LIMIT 150
 
@@ -34,6 +34,19 @@ SELECT date_trunc('MINUTE', gd.gpstime), count(*)
 	WHERE gd.gpstime > '2023-01-13 10:00:00'
 	GROUP BY date_trunc('MINUTE', gd.gpstime)
 LIMIT 250
+
+SELECT date_trunc('MINUTE', gd.edited), count(*)
+	FROM pteta_v2.gpsdata as gd
+	WHERE gd.edited > '2023-02-03 04:00:00'
+	GROUP BY date_trunc('MINUTE', gd.edited)
+LIMIT 250
+
+SELECT date_trunc('milliseconds', gd.edited), count(*)
+	FROM pteta_v2.gpsdata as gd
+	WHERE gd.edited > '2023-02-03 04:00:00'
+	GROUP BY date_trunc('milliseconds', gd.edited)
+LIMIT 250
+
 
 date_trunc('day', gd.gpstime)
 

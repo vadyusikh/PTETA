@@ -15,7 +15,7 @@ REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 
 REQUEST_FREQUENCY = 1.05
-PROCESS_FREQUENCY = 60
+PROCESS_FREQUENCY = 500
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
 END_DATE = (datetime.now() + dt.timedelta(days=10)).strftime(DATETIME_PATTERN)
