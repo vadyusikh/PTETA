@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
+from abc import abstractmethod
+
+from transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 
 
 @dataclass(unsafe_hash=True)
@@ -12,31 +14,9 @@ class TransportOperator(BaseDBAccessDataclass):
     name: str | perev_name | perevName
     """
     id: int
-    name: str
+    # name: str
 
     @classmethod
+    @abstractmethod
     def from_response_row(cls, response_row: dict) -> 'TransportOperator':
-        return TransportOperator(
-            response_row['perevId'] if response_row['perevName'] else -1,
-            response_row['perevName'] if response_row['perevName'] else "UNKNOWN"
-        )
-
-    @classmethod
-    def __table_name__(cls) -> str:
-        return f"{cls.__schema_name__()}.owner"
-
-    @classmethod
-    def __select_columns__(cls) -> str:
-        return 'id, "perev_name"'
-
-    @classmethod
-    def __where_expression__(cls, operator: 'TransportOperator') -> str:
-        return f'"id" = {operator.id} AND "perev_name" = \'{operator.name}\''
-
-    @classmethod
-    def __insert_columns__(cls) -> str:
-        return 'id, "perev_name"'
-
-    @classmethod
-    def __insert_expression__(cls, operator: 'TransportOperator') -> str:
-        return f"({operator.id}, '{operator.name}')"
+        pass

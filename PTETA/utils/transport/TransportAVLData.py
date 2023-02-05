@@ -1,11 +1,8 @@
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 
-from psycopg2.extensions import connection as Connection
-from psycopg2.errors import InFailedSqlTransaction
-from typing import List
-
-from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
+from transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 
 
 @dataclass
@@ -20,7 +17,6 @@ class TransportAVLData(BaseDBAccessDataclass):
     speed: float                | speed                 | speed
     orientation : float         | orientation           | orientation
     gpstime: datetime           | gpstime               | gpstime
-    in_depo : bool              | in_depo               | in_depo
     vehicle_id: int             | vehicle_id(FK)        | vehicle_id
     route_id: int               | route_id(FK)          | route_id
     response_datetime: datetime | response_datetime(FK) | response_datetime
@@ -30,64 +26,22 @@ class TransportAVLData(BaseDBAccessDataclass):
     speed: float
     orientation: float
     gpstime: datetime
-    in_depo: bool
     vehicle_id: int
     route_id: int
     response_datetime: datetime
 
+    def __init__(self):
+        self.route_id = None
+
     @classmethod
+    @abstractmethod
     def from_response_row(cls, response_row: dict) -> 'TransportAVLData':
-        return TransportAVLData(
-            response_row['lat'], response_row['lng'],
-            response_row['speed'] if response_row['speed'] else -1,
-            response_row['orientation'] if response_row['orientation'] else -1,
-            response_row['gpstime'], response_row['inDepo'],
-            None, None, response_row['response_datetime']
-        )
+        pass
 
+    @abstractmethod
     def __eq__(self, other: 'TransportAVLData') -> bool:
-        return isinstance(other, self.__class__) \
-               and self.lat == other.lat \
-               and self.lng == other.lng \
-               and self.speed == other.speed \
-               and self.orientation == other.orientation \
-               and self.gpstime == other.gpstime \
-               and self.in_depo == other.in_depo \
-               and self.vehicle_id == other.vehicle_id \
-               and self.route_id == other.route_id
+        pass
 
+    @abstractmethod
     def __hash__(self):
-        return hash((self.lat, self.lng, self.speed, self.orientation,
-                     self.gpstime, self.in_depo, self.vehicle_id, self.route_id))
-
-    @classmethod
-    def __table_name__(cls) -> str:
-        return f"{cls.__schema_name__()}.gpsdata"
-
-    @classmethod
-    def __select_columns__(cls) -> str:
-        return '"lat", "lng", "speed", "orientation", "gpstime", ' \
-               '"in_depo", "vehicle_id", "route_id", "response_datetime"'
-
-    @classmethod
-    def __where_expression__(cls, avl_data: 'TransportAVLData') -> str:
-        return f' "lat" = \'{avl_data.lat}\' ' + \
-                  f'AND "lng" = \'{avl_data.lng}\' ' + \
-                  f'AND "speed" = \'{avl_data.speed}\' ' + \
-                  f'AND "orientation" = \'{avl_data.orientation}\' ' + \
-                  f'AND "gpstime" = \'{avl_data.gpstime}\' ' + \
-                  f'AND "in_depo" = {avl_data.in_depo} ' + \
-                  f'AND "vehicle_id" = {avl_data.vehicle_id} ' + \
-                  f'AND "route_id" = {avl_data.route_id}'
-
-    @classmethod
-    def __insert_columns__(cls) -> str:
-        return '"lat", "lng", "speed", "orientation", "gpstime", ' \
-               '"in_depo", "vehicle_id", "route_id", "response_datetime"'
-
-    @classmethod
-    def __insert_expression__(cls, avl_data: 'TransportAVLData') -> str:
-        return f"('{avl_data.lat}', '{avl_data.lng}', '{avl_data.speed}', " \
-               f"'{avl_data.orientation}', '{avl_data.gpstime}', '{avl_data.in_depo}', " \
-               f"'{avl_data.vehicle_id}', '{avl_data.route_id}', " \
-               f""" { f"'{avl_data.response_datetime}'" if avl_data.response_datetime else 'NULL'})"""
+        pass

@@ -45,11 +45,11 @@ class BaseDBAccessDataclass(ABC):
         self.insert_many_in_table(connection, [self])
 
     @classmethod
-    def insert_many_in_table(
+    def         insert_many_in_table(
             cls,
             connection: Connection,
-            obj_list: List['BaseDBAccessDataclass']
-    ) -> None:
+        obj_list: List['BaseDBAccessDataclass']
+        ) -> None:
 
         if not obj_list:
             return
@@ -87,8 +87,9 @@ class BaseDBAccessDataclass(ABC):
                 raise err
 
     @classmethod
+    @abstractmethod
     def __schema_name__(cls) -> str:
-        return "pteta_v2"
+        pass
 
     @classmethod
     @abstractmethod

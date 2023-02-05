@@ -41,9 +41,10 @@ SELECT date_trunc('MINUTE', gd.edited), count(*)
 	GROUP BY date_trunc('MINUTE', gd.edited)
 LIMIT 250
 
+
 SELECT date_trunc('milliseconds', gd.edited), count(*)
 	FROM pteta_v2.gpsdata as gd
-	WHERE gd.edited > '2023-02-03 04:00:00'
+	WHERE gd.edited > '2023-02-05 16:25:00'
 	GROUP BY date_trunc('milliseconds', gd.edited)
 LIMIT 250
 

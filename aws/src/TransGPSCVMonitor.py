@@ -18,15 +18,13 @@ class TransGPSCVMonitor:
     route_to_id: dict = dict()
     vehicle_to_id: dict = dict()
 
-    objects_unique = {
-        TransportOperator: set(),
-        TransportRoute: set(),
-        TransportVehicle: set()
-    }
+    objects_unique = None
 
-    def __init__(self, connection_config: dict, **kwarg: dict) -> None:
+    def __init__(self, connection_config: dict, data_model: str, **kwarg: dict) -> None:
         self.connection_config = connection_config
         self.db_connection = psycopg2.connect(**connection_config)
+
+        self.define_data_model(data_model)
 
         self.reload_operators()
         self.reload_routes()
@@ -37,19 +35,51 @@ class TransGPSCVMonitor:
     def reconnect(self):
         self.db_connection = psycopg2.connect(**self.connection_config)
 
+    def define_data_model(self, data_model: str):
+        # TODO : define data model in configs
+        if data_model not in ["chernivtsi", "kharkiv"]:
+            raise ValueError(f"Wrong data model!")
+
+        self.data_model = data_model
+
+        if data_model == "chernivtsi":
+            from PTETA.utils.transport.chernivtsi.ChernivtsiTransportOperator import ChernivtsiTransportOperator
+            from PTETA.utils.transport.chernivtsi.ChernivtsiTransportRoute import ChernivtsiTransportRoute
+            from PTETA.utils.transport.chernivtsi.ChernivtsiTransportVehicle import ChernivtsiTransportVehicle
+            from PTETA.utils.transport.chernivtsi.ChernivtsiTransportAVLData import ChernivtsiTransportAVLData
+            self.operator_cls = ChernivtsiTransportOperator
+            self.route_cls = ChernivtsiTransportRoute
+            self.vehicle_cls = ChernivtsiTransportVehicle
+            self.avl_data_cls = ChernivtsiTransportAVLData
+        elif data_model == "kharkiv":
+            from PTETA.utils.transport.kharkiv.KharkivTransportOperator import KharkivTransportOperator
+            from PTETA.utils.transport.kharkiv.KharkivTransportRoute import KharkivTransportRoute
+            from PTETA.utils.transport.kharkiv.KharkivTransportVehicle import KharkivTransportVehicle
+            from PTETA.utils.transport.kharkiv.KharkivTransportAVLData import KharkivTransportAVLData
+            self.operator_cls = KharkivTransportOperator
+            self.route_cls = KharkivTransportRoute
+            self.vehicle_cls = KharkivTransportVehicle
+            self.avl_data_cls = KharkivTransportAVLData
+
+        self.objects_unique = {
+            self.operator_cls: set(),
+            self.route_cls: set(),
+            self.vehicle_cls: set()
+        }
+
     def reload_operators(self):
-        operator_list = TransportOperator.get_table(self.db_connection)
-        self.objects_unique[TransportOperator] = set(operator_list)
+        operator_list: List[TransportOperator] = self.operator_cls.get_table(self.db_connection)
+        self.objects_unique[self.operator_cls] = set(operator_list)
         self.operator_to_id = dict({operator: operator.id for operator in operator_list})
 
     def reload_routes(self):
-        route_list = TransportRoute.get_table(self.db_connection)
-        self.objects_unique[TransportRoute] = set(route_list)
+        route_list: List[TransportRoute] = self.route_cls.get_table(self.db_connection)
+        self.objects_unique[self.route_cls] = set(route_list)
         self.route_to_id = dict({route: route.id for route in route_list})
 
     def reload_vehicles(self):
-        vehicle_list = TransportVehicle.get_table(self.db_connection)
-        self.objects_unique[TransportVehicle] = set(vehicle_list)
+        vehicle_list: List[TransportVehicle] = self.vehicle_cls.get_table(self.db_connection)
+        self.objects_unique[self.vehicle_cls] = set(vehicle_list)
         self.vehicle_to_id = dict({vehicle: vehicle.id for vehicle in vehicle_list})
 
     def get_new_objs(self, obj_list: List[BaseDBAccessDataclass]) -> List[BaseDBAccessDataclass]:
@@ -83,10 +113,9 @@ class TransGPSCVMonitor:
             return False
         return True
 
-    @classmethod
-    def decompose_response(cls, response: List[dict], valid_fn=None) -> Union:
+    def decompose_response(self, response: List[dict], valid_fn=None) -> Union:
         if valid_fn is None:
-            valid_fn = cls.row_validation
+            valid_fn = self.row_validation
 
         operator_list, route_list = list(), list()
         vehicle_list, avl_data_list = list(), list()
@@ -94,10 +123,10 @@ class TransGPSCVMonitor:
         for row in response:
             if not valid_fn(row):
                 continue
-            operator_list.append(TransportOperator.from_response_row(row))
-            route_list.append(TransportRoute.from_response_row(row))
-            vehicle_list.append(TransportVehicle.from_response_row(row))
-            avl_data_list.append(TransportAVLData.from_response_row(row))
+            operator_list.append(self.operator_cls.from_response_row(row))
+            route_list.append(self.route_cls.from_response_row(row))
+            vehicle_list.append(self.vehicle_cls.from_response_row(row))
+            avl_data_list.append(self.avl_data_cls.from_response_row(row))
 
         return operator_list, route_list, vehicle_list, avl_data_list
 
@@ -115,8 +144,8 @@ class TransGPSCVMonitor:
             avl_data_list[i].route_id = self.route_to_id[route]
 
         try:
-            TransportAVLData.insert_many_in_table(self.db_connection, avl_data_list)
+            self.avl_data_cls.insert_many_in_table(self.db_connection, avl_data_list)
         except self.db_connection.Error:
             self.reconnect()
             time.sleep(1)
-            TransportAVLData.insert_many_in_table(self.db_connection, avl_data_list)
+            self.avl_data_cls.insert_many_in_table(self.db_connection, avl_data_list)

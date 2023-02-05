@@ -15,7 +15,7 @@ REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 
 REQUEST_FREQUENCY = 1.05
-PROCESS_FREQUENCY = 500
+PROCESS_FREQUENCY = 30
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
 END_DATE = (datetime.now() + dt.timedelta(days=10)).strftime(DATETIME_PATTERN)
@@ -146,7 +146,7 @@ def main():
         'password': os.environ['RDS_PTETA_DB_PASSWORD']
     })
 
-    monitor = TransGPSCVMonitor(connection_config)
+    monitor = TransGPSCVMonitor(connection_config=connection_config, data_model="chernivtsi")
 
     scheduler = BackgroundScheduler(job_defaults={'max_instances': 8})
     scheduler.add_job(
