@@ -26,7 +26,7 @@ class BaseDBAccessDataclass(ABC):
         if not obj_list:
             return []
 
-        sql = f"SELECT {cls.__select_columns__()} " \
+        sql = f"SELECT {cls.__where_columns__()} " \
               f"FROM {cls.__table_name__()} " + f" WHERE " + \
               " OR".join([f"({cls.__where_expression__(obj)}) "
                           for obj in obj_list]) + ";"
@@ -45,7 +45,7 @@ class BaseDBAccessDataclass(ABC):
         self.insert_many_in_table(connection, [self])
 
     @classmethod
-    def         insert_many_in_table(
+    def insert_many_in_table(
             cls,
             connection: Connection,
         obj_list: List['BaseDBAccessDataclass']
@@ -99,6 +99,11 @@ class BaseDBAccessDataclass(ABC):
     @classmethod
     @abstractmethod
     def __select_columns__(cls) -> str:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def __where_columns__(cls, obj: 'BaseDBAccessDataclass') -> str:
         pass
 
     @classmethod

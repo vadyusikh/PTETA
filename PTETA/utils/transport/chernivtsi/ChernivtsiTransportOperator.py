@@ -31,6 +31,10 @@ class ChernivtsiTransportOperator(TransportOperator, ChernivtsiBaseDBAccessDatac
         return 'id, "perev_name"'
 
     @classmethod
+    def __where_columns__(cls) -> str:
+        return 'id, "perev_name"'
+
+    @classmethod
     def __where_expression__(cls, operator: 'ChernivtsiTransportOperator') -> str:
         return f'"id" = {operator.id} AND "perev_name" = \'{operator.name}\''
 

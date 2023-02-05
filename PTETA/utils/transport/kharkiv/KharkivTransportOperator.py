@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from transport.TransportOperator import TransportOperator
-from transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
+from PTETA.utils.transport.TransportOperator import TransportOperator
+from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
 
 
 @dataclass(unsafe_hash=True)
@@ -14,6 +14,10 @@ class KharkivTransportOperator(TransportOperator, BaseDBAccessDataclass):
     name: str | perev_name | perevName
     """
     name: str
+
+    def __init__(self, id: int, name: str):
+        self.id = -1 if id is None else int(id)
+        self.name = str(name)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportOperator':
@@ -30,15 +34,19 @@ class KharkivTransportOperator(TransportOperator, BaseDBAccessDataclass):
 
     @classmethod
     def __select_columns__(cls) -> str:
-        return 'id, "owner_name"'
+        return 'id, "name"'
+
+    @classmethod
+    def __where_columns__(cls) -> str:
+        return cls.__select_columns__()
 
     @classmethod
     def __where_expression__(cls, operator: 'KharkivTransportOperator') -> str:
-        return f'"id" = {operator.id} AND "owner_name" = \'{operator.name}\''
+        return f'"id" = {operator.id} AND "name" = \'{operator.name}\''
 
     @classmethod
     def __insert_columns__(cls) -> str:
-        return 'id, "owner_name"'
+        return 'id, "name"'
 
     @classmethod
     def __insert_expression__(cls, operator: 'KharkivTransportOperator') -> str:

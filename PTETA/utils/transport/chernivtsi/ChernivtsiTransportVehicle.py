@@ -19,8 +19,6 @@ class ChernivtsiTransportVehicle(TransportVehicle, ChernivtsiBaseDBAccessDatacla
     perev_id: int   | perev_id(FK)| perevId
 
     """
-    imei: str
-    name: str
     bus_number: str
     remark: str
     perev_id: int
@@ -28,10 +26,12 @@ class ChernivtsiTransportVehicle(TransportVehicle, ChernivtsiBaseDBAccessDatacla
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportVehicle':
         return ChernivtsiTransportVehicle(
-            None, response_row['imei'], response_row['name'],
-            response_row['busNumber'] if response_row['busNumber'] else "UNKNOWN",
-            response_row['remark'] if response_row['remark'] else '',
-            response_row['perevId']
+            id=None,
+            imei=str(response_row['imei']),
+            name=str(response_row['name']),
+            bus_number=str(response_row['busNumber'] if response_row['busNumber'] else "UNKNOWN"),
+            remark=str(response_row['remark'] if response_row['remark'] else ''),
+            perev_id=int(response_row['perevId'])
         )
 
     def __eq__(self, other: 'ChernivtsiTransportVehicle') -> bool:
@@ -62,6 +62,10 @@ class ChernivtsiTransportVehicle(TransportVehicle, ChernivtsiBaseDBAccessDatacla
 
     @classmethod
     def __select_columns__(cls) -> str:
+        return 'id, "imei", "name", "bus_number", "remark", "perev_id"'
+
+    @classmethod
+    def __where_columns__(cls) -> str:
         return 'id, "imei", "name", "bus_number", "remark", "perev_id"'
 
     @classmethod

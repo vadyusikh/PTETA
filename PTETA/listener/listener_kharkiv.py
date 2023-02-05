@@ -93,4 +93,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # print("\n".join([str(p) for p in pathlib.Path("../../data/local/jsons").iterdir()]) )

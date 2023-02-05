@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 from abc import abstractmethod
 
-from transport.BaseDBAccessDataclass import BaseDBAccessDataclass
-
 
 @dataclass(unsafe_hash=True)
-class TransportOperator(BaseDBAccessDataclass):
+class TransportOperator:
     """
     Column name ralations
     dataclass | DB         | HTTP request

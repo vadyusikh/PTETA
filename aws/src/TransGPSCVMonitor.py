@@ -4,7 +4,6 @@ from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 from PTETA.utils.transport.TransportOperator import TransportOperator
 from PTETA.utils.transport.TransportRoute import TransportRoute
 from PTETA.utils.transport.TransportVehicle import TransportVehicle
-from PTETA.utils.transport.TransportAVLData import TransportAVLData
 from psycopg2.extensions import connection as Connection
 import psycopg2
 
@@ -100,11 +99,11 @@ class TransGPSCVMonitor:
 
         for obj in obj_to_insert:
             obj.insert_many_in_table(self.db_connection, [obj])
-            if isinstance(obj, TransportOperator):
+            if isinstance(obj, self.operator_cls):
                 self.reload_operators()
-            elif isinstance(obj, TransportRoute):
+            elif isinstance(obj, self.route_cls):
                 self.reload_routes()
-            elif isinstance(obj, TransportVehicle):
+            elif isinstance(obj, self.vehicle_cls):
                 self.reload_vehicles()
 
     @classmethod

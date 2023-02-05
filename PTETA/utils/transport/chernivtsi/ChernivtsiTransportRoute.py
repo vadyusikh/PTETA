@@ -34,6 +34,10 @@ class ChernivtsiTransportRoute(TransportRoute, ChernivtsiBaseDBAccessDataclass):
         return 'id, "route_name", "route_colour"'
 
     @classmethod
+    def __where_columns__(cls) -> str:
+        return 'id, "route_name", "route_colour"'
+
+    @classmethod
     def __where_expression__(cls, route: 'ChernivtsiTransportRoute') -> str:
         return f""""id" = {route.id} AND "route_name" = '{route.name}'"""
 

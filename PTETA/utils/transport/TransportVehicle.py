@@ -2,11 +2,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from psycopg2.extensions import connection as Connection
 
-from transport.BaseDBAccessDataclass import BaseDBAccessDataclass
-
 
 @dataclass
-class TransportVehicle(BaseDBAccessDataclass):
+class TransportVehicle:
     """
     Column name ralations
     dataclass       | DB          | HTTP request

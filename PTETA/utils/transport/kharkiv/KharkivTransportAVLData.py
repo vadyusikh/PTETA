@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from transport.TransportAVLData import TransportAVLData
-from transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
+from PTETA.utils.transport.TransportAVLData import TransportAVLData
+from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
 
 
 @dataclass
@@ -24,6 +24,20 @@ class KharkivTransportAVLData(TransportAVLData, BaseDBAccessDataclass):
     """
     gps_datetime_origin: int
     dd: int
+
+    def __init__(self, lat: float, lng: float, speed: float, orientation: float,
+                 gpstime: str, gps_datetime_origin: str, dd: int,
+                 vehicle_id: int, route_id: int, response_datetime: str):
+        self.lat = float(lat)
+        self.lng = float(lng)
+        self.speed = "NULL" if speed is None else float(speed)
+        self.orientation = "NULL" if orientation is None else float(orientation)
+        self.gpstime = str(gpstime)
+        self.gps_datetime_origin = str(gps_datetime_origin)
+        self.dd = "NULL" if dd is None else int(dd)
+        self.vehicle_id = None if vehicle_id is None else int(vehicle_id)
+        self.route_id = None if route_id is None else int(route_id)
+        self.response_datetime = str(response_datetime)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportAVLData':
@@ -62,6 +76,10 @@ class KharkivTransportAVLData(TransportAVLData, BaseDBAccessDataclass):
     def __select_columns__(cls) -> str:
         return '"lat", "lng", "speed", "orientation", "gpstime", "gps_datetime_origin",' \
                '"dd", "vehicle_id", "route_id", "response_datetime"'
+
+    @classmethod
+    def __where_columns__(cls) -> str:
+        return cls.__select_columns__()
 
     @classmethod
     def __where_expression__(cls, avl_data: 'KharkivTransportAVLData') -> str:

@@ -61,6 +61,11 @@ class ChernivtsiTransportAVLData(TransportAVLData, ChernivtsiBaseDBAccessDatacla
                '"in_depo", "vehicle_id", "route_id", "response_datetime"'
 
     @classmethod
+    def __where_columns__(cls) -> str:
+        return '"lat", "lng", "speed", "orientation", "gpstime", ' \
+               '"in_depo", "vehicle_id", "route_id", "response_datetime"'
+
+    @classmethod
     def __where_expression__(cls, avl_data: 'ChernivtsiTransportAVLData') -> str:
         return f' "lat" = \'{avl_data.lat}\' ' + \
                   f'AND "lng" = \'{avl_data.lng}\' ' + \

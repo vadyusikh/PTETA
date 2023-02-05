@@ -2,11 +2,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 
-from transport.BaseDBAccessDataclass import BaseDBAccessDataclass
-
 
 @dataclass
-class TransportAVLData(BaseDBAccessDataclass):
+class TransportAVLData:
     """
     Column lng relations
 
