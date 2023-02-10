@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import os
 
-from src.RequestProcessor import RequestProcessor
+from src.TransGPSCVMonitor import TransGPSCVMonitor
 
 CONNECTION_CONFIG = dict({
         'host': os.environ['RDS_HOSTNAME'],
@@ -19,7 +19,7 @@ BATCH_SIZE = 1_000
 
 
 def main():
-    monitor = RequestProcessor(CONNECTION_CONFIG)
+    monitor = TransGPSCVMonitor(CONNECTION_CONFIG, data_model="chernivtsi")
 
     file_path_list = list(Path("D:/projects/pet_project/tables").iterdir())
     file_path_list = sorted(file_path_list,

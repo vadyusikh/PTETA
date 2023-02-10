@@ -9,23 +9,24 @@ from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAcc
 class KharkivTransportVehicle(TransportVehicle, BaseDBAccessDataclass):
     """
     Column name ralations
-    dataclass       | DB          | HTTP request
+    dataclass       | DB          | pandas col
     ----------------|-------------|------------
     id: int         | id(PK)      |  -
-    imei: int       | imei        | imei
-    name: str       | name        | name
-    bus_number: str | bus_number  | busNumber
-    remark: str     | remark      | remark
-    perev_id: int   | perev_id(FK)| perevId
+    imei: int       | imei        |
+    name: str       | name        |
+    owner_id: int   | owner_id(FK)|
 
     """
+    id: int
+    imei: str
+    name: str
     owner_id: int
 
-    def __init__(self, id: int, imei: str, name: str, owner_id: int):
-        self.id = None if id is None else int(id)
+    def __init__(self, imei: str, name: str, owner_id: int, id: int = None, **kwargs):
+        self.id = int(id) if not(id is None) else None
         self.imei = str(imei)
-        self.name = str(name)
-        self.owner_id = -1 if id is None else int(owner_id)
+        self.name = str(name) if not(name is None) else "NULL"
+        self.owner_id = int(owner_id) if not(id is None) else -1
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportVehicle':

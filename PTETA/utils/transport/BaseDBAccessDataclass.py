@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from psycopg2.extensions import connection as Connection
 from psycopg2.errors import InFailedSqlTransaction
 from typing import List
@@ -6,7 +5,6 @@ from typing import List
 from abc import ABC, abstractmethod
 
 
-@dataclass
 class BaseDBAccessDataclass(ABC):
     @classmethod
     @abstractmethod
@@ -34,7 +32,7 @@ class BaseDBAccessDataclass(ABC):
         with connection.cursor() as cursor:
             try:
                 cursor.execute(sql)
-                response_set = set([cls(*row) for row in cursor.fetchall()])
+                response_set = set(cls.obj_from_request(cursor))
                 return [obj in response_set for obj in obj_list]
             except Exception as err:
                 connection.rollback()
@@ -43,6 +41,16 @@ class BaseDBAccessDataclass(ABC):
 
     def insert_in_table(self, connection: Connection) -> None:
         self.insert_many_in_table(connection, [self])
+
+    @classmethod
+    def obj_from_request(cls, cursor):
+        columns = [desc[0] for desc in cursor.description]
+        list_of_dict = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        try:
+            return [cls(**row) for row in list_of_dict]
+        except TypeError as e:
+            print(f"Exception raised on class\n\t'{cls}'\n on data\n\t{list_of_dict}")
+            raise e
 
     @classmethod
     def insert_many_in_table(
@@ -81,7 +89,7 @@ class BaseDBAccessDataclass(ABC):
                   f" FROM {cls.__table_name__()} {additional_condition};"
             try:
                 cursor.execute(sql)
-                return [cls(*rec) for rec in cursor.fetchall()]
+                return cls.obj_from_request(cursor)
             except InFailedSqlTransaction as err:
                 connection.rollback()
                 raise err

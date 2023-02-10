@@ -19,28 +19,38 @@ class ChernivtsiTransportVehicle(TransportVehicle, ChernivtsiBaseDBAccessDatacla
     perev_id: int   | perev_id(FK)| perevId
 
     """
+    id: int
+    imei: str
+    name: str
     bus_number: str
     remark: str
     perev_id: int
 
+    def __init__(self, imei: str, name: str, bus_number: str, remark: str, perev_id: int, id: int = None,
+                 **kwargs):
+        self.id = int(id) if not (id is None) else None
+        self.imei = str(imei)
+        self.name = str(name) if not (name is None) else "NULL"
+        self.bus_number = str(bus_number) if bus_number else "UNKNOWN"
+        self.remark = str(remark) if remark else ''
+        self.perev_id = int(perev_id) if not (perev_id is None) else -1
+
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportVehicle':
-        return ChernivtsiTransportVehicle(
-            id=None,
-            imei=str(response_row['imei']),
-            name=str(response_row['name']),
-            bus_number=str(response_row['busNumber'] if response_row['busNumber'] else "UNKNOWN"),
-            remark=str(response_row['remark'] if response_row['remark'] else ''),
-            perev_id=int(response_row['perevId'])
-        )
+        if 'bus_number' not in response_row.keys():
+            response_row['bus_number'] = response_row['busNumber']
+        if 'perev_id' not in response_row.keys():
+            response_row['perev_id'] = response_row['perevId']
+
+        return ChernivtsiTransportVehicle(**response_row)
 
     def __eq__(self, other: 'ChernivtsiTransportVehicle') -> bool:
         return isinstance(other, self.__class__) \
-               and self.imei == other.imei \
-               and self.name == other.name \
-               and self.bus_number == other.bus_number \
-               and self.remark == other.remark \
-               and self.perev_id == other.perev_id
+            and self.imei == other.imei \
+            and self.name == other.name \
+            and self.bus_number == other.bus_number \
+            and self.remark == other.remark \
+            and self.perev_id == other.perev_id
 
     def __hash__(self):
         return hash((self.imei, self.name, self.bus_number, self.remark, self.perev_id))
@@ -71,10 +81,10 @@ class ChernivtsiTransportVehicle(TransportVehicle, ChernivtsiBaseDBAccessDatacla
     @classmethod
     def __where_expression__(cls, vehicle: 'ChernivtsiTransportVehicle') -> str:
         return f'"imei" = \'{vehicle.imei}\' ' + \
-               f'AND "name" = \'{vehicle.name}\' ' + \
-               f'AND "bus_number" = \'{vehicle.bus_number if vehicle.bus_number else "NULL"}\' ' + \
-               f'AND "remark" = \'{vehicle.remark}\' ' + \
-               f'AND "perev_id" = {vehicle.perev_id if vehicle.perev_id else "NULL"} '
+            f'AND "name" = \'{vehicle.name}\' ' + \
+            f'AND "bus_number" = \'{vehicle.bus_number if vehicle.bus_number else "NULL"}\' ' + \
+            f'AND "remark" = \'{vehicle.remark}\' ' + \
+            f'AND "perev_id" = {vehicle.perev_id if vehicle.perev_id else "NULL"} '
 
     @classmethod
     def __insert_columns__(cls) -> str:
@@ -84,5 +94,5 @@ class ChernivtsiTransportVehicle(TransportVehicle, ChernivtsiBaseDBAccessDatacla
     def __insert_expression__(cls, vehicle: 'ChernivtsiTransportVehicle') -> str:
         return f"('{vehicle.imei}', '{vehicle.name}', " \
                f"'{vehicle.bus_number if vehicle.bus_number else 'NULL'}', " + \
-               f"'{vehicle.remark}'," \
-               f"{vehicle.perev_id if vehicle.perev_id else 'NULL'})"
+            f"'{vehicle.remark}'," \
+            f"{vehicle.perev_id if vehicle.perev_id else 'NULL'})"

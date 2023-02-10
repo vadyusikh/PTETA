@@ -1,3 +1,4 @@
+from dateutil.tz import tzlocal
 from datetime import datetime
 import json
 import requests
@@ -5,6 +6,10 @@ import pathlib
 import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
+
+from tqdm import tqdm
 
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
 END_DATE = '2023-02-27 23:59:00'
@@ -38,10 +43,77 @@ def request_data():
 
         with open(str(path/f_name), 'w', encoding='utf8') as out_f:
             json.dump(response, out_f, ensure_ascii=False)
-        
+
     except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as err:
         print(f"{dt_now.strftime('%Y-%m-%d %H;%M;%S')} : error while trying to GET data\n"
               f"\t{err}\n")
+
+
+def load_responses(resp_path):
+    resp_tm = datetime.strptime(resp_path.name[6:-5], '%Y-%m-%d %H;%M;%S')
+    resp_tm_str = resp_tm.replace(tzinfo=tzlocal()).isoformat()
+
+    with open(resp_path) as f:
+        resp = json.load(f)
+        if ("rows" in resp) and (resp["rows"]):
+            return [row + [resp['timestamp'], resp_tm_str]
+                    for row in resp['rows']]
+        else:
+            return []
+
+
+def accumulate_responses_from_folder(folder_path):
+    file_path_list = list(folder_path.iterdir())
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(tqdm(executor.map(load_responses, file_path_list),
+                            total=len(file_path_list), mininterval=10, leave=False,
+                            desc="Accumulate responses from folder")
+                       )
+        resp_list = []
+        for resp_ in results:
+            resp_list += resp_
+        print(f"Accumulate responses from folder\n" \
+              f"\t{len(resp_list)} / {len(resp_list)} [avg={len(resp_list) / len(resp_list):.2f}]")
+
+    columns = ['imei', 'lat', 'lng', 'speed', 'gps_datetime_origin', 'orientation', 'route_name',
+               'route_type', 'vehicle_id', 'dd', 'gpstime', 'response_datetime']
+
+    return pd.DataFrame(resp_list, columns=columns)
+
+
+def clear_data(in_df):
+    unique_data = []
+
+    imei_list = in_df['imei'].value_counts().index
+    imei_tqdm = tqdm(
+        imei_list, total=len(imei_list), mininterval=10, leave=False, desc="Clear data"
+    )
+
+    for imei in imei_tqdm:
+        row_data = in_df[in_df['imei'] == imei].values.tolist()
+        result = [row_data[0]]
+        for row0, row1 in zip(row_data[:-1], row_data[1:]):
+            if row0[1:9] != row1[1:9]:
+                result += [row1]
+        unique_data += result
+
+    df_unique = pd.DataFrame(unique_data, columns=in_df.columns)
+    print(f"Clear data\n\t{len(in_df)} / {len(df_unique)} [avg {len(in_df) / len(df_unique):.02f}]")
+    return df_unique
+
+
+def after_process_data():
+    kharkiv_folder_path = pathlib.Path("../../data/local/jsons/kharkiv")
+    kharkiv_folder_list = [p for p in kharkiv_folder_path.iterdir() if "trans_data_" in p.name]
+    kharkiv_folders_list = sorted(kharkiv_folder_list,
+                                  key=lambda p: datetime.strptime(p.name[11:], '%d_%b_%Y'))
+
+    for folder_path in tqdm(kharkiv_folders_list[:-1]):
+        df = accumulate_responses_from_folder(folder_path)
+        df.to_parquet(folder_path.parent / 'archive/origin' / (folder_path.name + '_origin.parquet'))
+
+        df_u = clear_data(df)
+        df_u.to_parquet(folder_path.parent / 'archive/optimized' / (folder_path.name + '_optimized.parquet'))
 
 
 def main():

@@ -3,8 +3,8 @@
 .idea
 data/local/*
 /PTETA/configs/key_configs.py
-notebooks/kharkiv/images_gps_loc_identification
-notebooks/kharkiv/responses_examples
+notebooks/kharkiv/images_gps_loc_identification/*
+notebooks/kharkiv/responses_examples/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

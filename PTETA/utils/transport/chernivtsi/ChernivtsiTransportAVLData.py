@@ -22,19 +22,35 @@ class ChernivtsiTransportAVLData(TransportAVLData, ChernivtsiBaseDBAccessDatacla
     route_id: int               | route_id(FK)          | route_id
     response_datetime: datetime | response_datetime(FK) | response_datetime
     """
+    lat: float
+    lng: float
+    speed: float
+    orientation: float
+    gpstime: datetime
     in_depo: bool
+    vehicle_id: int
+    route_id: int
+    response_datetime: datetime
+
+    def __init__(self, lat: float, lng: float, speed: float, orientation: float,
+                 gpstime: str, in_depo: bool, response_datetime: str,
+                 vehicle_id: int = None, route_id: int = None, **kwargs):
+        self.lat = float(lat)
+        self.lng = float(lng)
+        self.speed = float(speed) if not(speed is None) else "NULL"
+        self.orientation = float(orientation) if not(orientation is None) else "NULL"
+        self.gpstime = str(gpstime)
+        self.in_depo = bool(in_depo)
+        self.vehicle_id = int(vehicle_id) if not(vehicle_id is None) else None
+        self.route_id = int(route_id) if not(route_id is None) else None
+        self.response_datetime = str(response_datetime)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportAVLData':
         return ChernivtsiTransportAVLData(
-            lat=response_row['lat'], lng=response_row['lng'],
-            speed=-1 if response_row['speed'] is None else float(response_row['speed'] ),
-            orientation=-1 if response_row['orientation'] is None else float(response_row['orientation']),
-            gpstime=response_row['gpstime'],
             in_depo=response_row['inDepo'],
-            vehicle_id=None, route_id=None,
-            response_datetime=response_row['response_datetime']
-        )
+            route_id=response_row['routeId'],
+            **response_row)
 
     def __eq__(self, other: 'ChernivtsiTransportAVLData') -> bool:
         return isinstance(other, self.__class__) \

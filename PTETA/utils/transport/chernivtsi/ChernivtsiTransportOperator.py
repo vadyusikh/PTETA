@@ -4,23 +4,36 @@ from transport.TransportOperator import TransportOperator
 from transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class ChernivtsiTransportOperator(TransportOperator, ChernivtsiBaseDBAccessDataclass):
     """
-    Column name ralations
-    dataclass | DB         | HTTP request
+    Column name relations
+    dataclass | DB (owner) | HTTP request
     ----------|------------|-------------
     id: int   | id         | perevId
     name: str | perev_name | perevName
     """
+    id: int
     name: str
+
+    def __init__(self, perev_name: str, id: int = -1, **kwargs):
+        self.id = int(id) if not(id is None) else -1
+        self.name = str(perev_name) if perev_name else "UNKNOWN"
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportOperator':
         return ChernivtsiTransportOperator(
-            response_row['perevId'] if response_row['perevName'] else -1,
-            response_row['perevName'] if response_row['perevName'] else "UNKNOWN"
+            perev_name=response_row['perevName'],
+            id=response_row['perevId']
         )
+
+    def __eq__(self, other: 'ChernivtsiTransportOperator') -> bool:
+        return isinstance(other, self.__class__) \
+            and self.id == other.id \
+            and self.name == other.name
+
+    def __hash__(self):
+        return hash((self.id, self.name))
 
     @classmethod
     def __table_name__(cls) -> str:

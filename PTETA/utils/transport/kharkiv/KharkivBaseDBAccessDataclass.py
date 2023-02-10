@@ -7,4 +7,4 @@ from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 class BaseDBAccessDataclass(BaseDBAccessDataclass, ABC):
     @classmethod
     def __schema_name__(cls) -> str:
-        return "kharkiv"
+        return "kharkiv2"

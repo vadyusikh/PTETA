@@ -8,49 +8,49 @@ from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAcc
 @dataclass
 class KharkivTransportAVLData(TransportAVLData, BaseDBAccessDataclass):
     """
-    Column lng relations
-
+    Column relations
     dataclass                   | DB                    | HTTP request
     ----------------------------|-----------------------|------------
-    lat: float                  | lat                   | lat
-    lng: float                  | lng                   | lng
-    speed: float                | speed                 | speed
-    orientation : float         | orientation           | orientation
-    gpstime: datetime           | gpstime               | gpstime
-    in_depo : bool              | in_depo               | in_depo
-    vehicle_id: int             | vehicle_id(FK)        | vehicle_id
-    route_id: int               | route_id(FK)          | route_id
-    response_datetime: datetime | response_datetime(FK) | response_datetime
+    lat: float                  | lat                   |
+    lng: float                  | lng                   |
+    speed: float                | speed                 |
+    orientation: float          | orientation           |
+    gpstime: datetime           | gpstime               |
+    gps_datetime_origin: int    | gps_datetime_origin   |
+    dd: int                     | dd                    |
+    vehicle_id: int             | vehicle_id(FK)        |
+    route_id: int               | route_id(FK)          |
+    response_datetime: datetime | response_datetime(FK) |
     """
+    lat: float
+    lng: float
+    speed: float
+    orientation: float
+    gpstime: datetime
     gps_datetime_origin: int
     dd: int
+    vehicle_id: int
+    route_id: int
+    response_datetime: datetime
 
     def __init__(self, lat: float, lng: float, speed: float, orientation: float,
                  gpstime: str, gps_datetime_origin: str, dd: int,
-                 vehicle_id: int, route_id: int, response_datetime: str):
+                 vehicle_id: int, response_datetime: str, route_id: int=None, **kwargs):
         self.lat = float(lat)
         self.lng = float(lng)
-        self.speed = "NULL" if speed is None else float(speed)
-        self.orientation = "NULL" if orientation is None else float(orientation)
+        self.speed = float(speed) if not(speed is None) else "NULL"
+        self.orientation = float(orientation) if not(orientation is None) else "NULL"
         self.gpstime = str(gpstime)
-        self.gps_datetime_origin = str(gps_datetime_origin)
-        self.dd = "NULL" if dd is None else int(dd)
-        self.vehicle_id = None if vehicle_id is None else int(vehicle_id)
-        self.route_id = None if route_id is None else int(route_id)
+        self.gps_datetime_origin = int(gps_datetime_origin)
+        self.dd = int(dd) if not(dd is None) else "NULL"
+        self.vehicle_id = int(vehicle_id) if not(vehicle_id is None) else None
+        self.route_id = int(route_id) if not(route_id is None) else None
         self.response_datetime = str(response_datetime)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportAVLData':
-        return KharkivTransportAVLData(
-            lat=response_row['lat'], lng=response_row['lng'],
-            speed=response_row['speed'] if response_row['speed'] else -1,
-            orientation=response_row['orientation'] if response_row['orientation'] else -1,
-            gpstime=response_row['gpstime'],
-            gps_datetime_origin=response_row['gps_datetime_origin'],
-            dd=response_row['dd'],
-            vehicle_id=None, route_id=None,
-            response_datetime=response_row['response_datetime']
-        )
+        return KharkivTransportAVLData(**response_row)
+
 
     def __eq__(self, other: 'KharkivTransportAVLData') -> bool:
         return isinstance(other, self.__class__) \

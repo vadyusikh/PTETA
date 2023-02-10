@@ -8,24 +8,24 @@ from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAcc
 class KharkivTransportOperator(TransportOperator, BaseDBAccessDataclass):
     """
     Column name ralations
-    dataclass | DB         | HTTP request
-    ----------|------------|-------------
-    id: int   | id         | perevId
-    name: str | perev_name | perevName
+    dataclass | DB            | HTTP request
+    ----------|---------------|-------------
+    id: int   | operator_id   |
+    name: str | operator_name |
     """
+    id: int
     name: str
 
-    def __init__(self, id: int, name: str):
-        self.id = -1 if id is None else int(id)
-        self.name = str(name)
+    def __init__(self, id: int, name: str, **kwargs):
+        self.id = int(id) if not(id is None) else -1
+        self.name = str(name) if name else "UNKNOWN"
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportOperator':
         if 'operator_name' not in response_row.keys():
             return KharkivTransportOperator(id=-1, name="UNKNOWN")
         return KharkivTransportOperator(
-            id=response_row['operator_id'] if response_row['operator_name'] else -1,
-            name=response_row['operator_name'] if response_row['operator_name'] else "UNKNOWN"
+            id=response_row['operator_id'], name=response_row['operator_name']
         )
 
     @classmethod

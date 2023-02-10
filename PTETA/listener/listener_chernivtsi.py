@@ -85,6 +85,7 @@ def process_data(
 
     df_to_write = df.merge(last_avl_df, on=COLUMNS_TO_UNIQUE, how='left', indicator=True)
     df_to_write = df[(df_to_write['_merge'] == 'left_only').tolist()]
+    del df_to_write["id"]
 
     if len(df_to_write) > 0:
         monitor.write_to_db(df_to_write.to_dict('records'))
