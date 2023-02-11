@@ -145,6 +145,7 @@ class TransGPSCVMonitor:
         try:
             self.avl_data_cls.insert_many_in_table(self.db_connection, avl_data_list)
         except self.db_connection.Error:
+            # TODO : reconnection retry with loop limit and temporary data save
             self.reconnect()
             time.sleep(1)
             self.avl_data_cls.insert_many_in_table(self.db_connection, avl_data_list)

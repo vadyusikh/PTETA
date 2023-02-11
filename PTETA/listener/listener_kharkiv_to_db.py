@@ -18,11 +18,11 @@ REQUEST_FREQUENCY = 5
 PROCESS_FREQUENCY = 60
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
-END_DATE = (datetime.now() + dt.timedelta(days=10)).strftime(DATETIME_PATTERN)
-END_DATE_2 = (datetime.now() + dt.timedelta(days=10, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
-COLUMNS_TO_UNIQUE = [
-    'imei', 'name', 'lat', 'lng', 'speed', 'orientation', 'gpstime',
-    'routeId', 'inDepo', 'busNumber', 'perevId', 'perevName', 'remark', 'online'
+END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)
+END_DATE_2 = (datetime.now() + dt.timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
+COLUMNS = [
+    'imei', 'lat', 'lng', 'speed', 'gps_datetime_origin', 'orientation',
+    'route_name', 'route_type', 'vehicle_id', 'dd', 'gpstime', 'response_datetime'
 ]
 
 
@@ -35,8 +35,8 @@ def request_data(process_queue: Queue, request_counter: LockingCounter) -> None:
         if (request is None) or (request.text is None):
             return
         response = json.loads(request.text)
-        for imei in response:
-            response[imei]['response_datetime'] = dt_tz_str
+        response['response_datetime'] = dt_tz_str
+
         try:
             process_queue.put(response, timeout=5)
         except process_queue.Full as e:
@@ -49,6 +49,29 @@ def request_data(process_queue: Queue, request_counter: LockingCounter) -> None:
     except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as err:
         print(f"{dt_now.strftime(DATETIME_PATTERN)} : error while trying to GET data\n"
               f"\t{err}\n")
+
+
+def clear_data(in_df, verbose: bool = False):
+    unique_data = []
+
+    in_df["gpstime_ns"] = pd.to_datetime(in_df["gpstime"])
+    imei_list = in_df['imei'].value_counts().index
+
+    for imei in imei_list:
+        row_data = in_df[in_df['imei'] == imei].values.tolist()
+        row_data = sorted(row_data, key=lambda x: x[-1])
+        result = [row_data[0][:-1]]
+        for row0, row1 in zip(row_data[:-1], row_data[1:]):
+            if row0[1:9] != row1[1:9]:
+                result += [row1[:-1]]
+        unique_data += result
+
+    del in_df['gpstime_ns']
+
+    df_unique = pd.DataFrame(unique_data, columns=in_df.columns)
+    if verbose:
+        print(f"Clear data\n\t{len(in_df)} / {len(df_unique)} [avg {len(in_df) / len(df_unique):.02f}]")
+    return df_unique
 
 
 def process_data(
@@ -64,47 +87,48 @@ def process_data(
     avl_data_list = []
     while not request_queue.empty():
         response = request_queue.get()
-        avl_data_list += [response[key] for key in response]
+        avl_data_list += [
+            row + [response['timestamp'], response['response_datetime']]
+            for row in response['rows']
+        ]
 
     if not avl_data_list:
         return
 
-    df = pd.DataFrame(avl_data_list)
-    total = len(df)
-    df.drop_duplicates(subset=COLUMNS_TO_UNIQUE, inplace=True)
-
-    if verbose:
-        print(f"\tprocess_data:: unique {len(df)} of {total}")
+    df = pd.DataFrame(avl_data_list, columns=COLUMNS)
 
     if last_avl_df_queue.empty():
-        last_avl_df = pd.DataFrame(columns=df.columns)
+        pass
     else:
         last_avl_df = last_avl_df_queue.get()
         while not last_avl_df_queue.empty():
             last_avl_df_queue.get()
 
-    df_to_write = df.merge(last_avl_df, on=COLUMNS_TO_UNIQUE, how='left', indicator=True)
-    df_to_write = df[(df_to_write['_merge'] == 'left_only').tolist()]
+        df = pd.concat([df, last_avl_df])
 
-    if len(df_to_write) > 0:
-        monitor.write_to_db(df_to_write.to_dict('records'))
-        records_counter.increment(len(df_to_write))
+    df_unique = clear_data(df)
 
     if verbose:
-        print(f"\tprocess_data:: to write {len(df_to_write)} of unique {len(df)}")
+        print(f"\tprocess_data:: unique {len(df_unique)} of {df}")
 
-    last_avl_df = pd.concat([df, last_avl_df])
     last_avl_list = list()
-    for state, frame in last_avl_df.groupby('imei'):
+    for state, frame in df_unique.groupby('imei'):
         item = frame.sort_values(
             by="gpstime", ascending=False, key=lambda x: x.astype('datetime64[ns]')
         ).iloc[0]
         last_avl_list.append(item)
 
-    last_avl_df = pd.DataFrame(last_avl_list)
+    last_avl_df = pd.DataFrame(last_avl_list, columns=df_unique.columns)
     last_avl_df_queue.put(last_avl_df)
     if verbose:
         print(f"\tprocess_data:: New last awl {len(last_avl_df)} was {len(last_avl_list)}")
+
+    if len(df_unique) > 0:
+        monitor.write_to_db(df_unique.to_dict('records'))
+        records_counter.increment(len(df_unique))
+
+    if verbose:
+        print(f"\tprocess_data:: to write {len(df_unique)} of unique {len(df)}")
 
 
 def verbose_update(
@@ -146,7 +170,7 @@ def main():
         'password': os.environ['RDS_PTETA_DB_PASSWORD']
     })
 
-    monitor = TransGPSCVMonitor(connection_config=connection_config, data_model="chernivtsi")
+    monitor = TransGPSCVMonitor(connection_config=connection_config, data_model="kharkiv")
 
     scheduler = BackgroundScheduler(job_defaults={'max_instances': 8})
     scheduler.add_job(
