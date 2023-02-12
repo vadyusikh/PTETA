@@ -36,10 +36,6 @@ def main():
 
         df_cur = df_sum[:]
 
-
-        df_cur["vehicle_id"] = df_cur["vehcle_id"]
-        # print(f"\t{df_cur.columns}\n")
-
         batch_tqdm = tqdm(df_cur.groupby(np.arange(len(df_cur)) // BATCH_SIZE))
         for batch_number, batch_df in batch_tqdm:
             batch_df = batch_df.where(pd.notnull(batch_df), None)
