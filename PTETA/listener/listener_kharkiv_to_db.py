@@ -15,7 +15,7 @@ REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 
 REQUEST_FREQUENCY = 5
-PROCESS_FREQUENCY = 60
+PROCESS_FREQUENCY = 30
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
 END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)

@@ -18,8 +18,8 @@ REQUEST_FREQUENCY = 1.05
 PROCESS_FREQUENCY = 30
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
-END_DATE = (datetime.now() + dt.timedelta(days=10)).strftime(DATETIME_PATTERN)
-END_DATE_2 = (datetime.now() + dt.timedelta(days=10, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
+END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)
+END_DATE_2 = (datetime.now() + dt.timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
 COLUMNS_TO_UNIQUE = [
     'imei', 'name', 'lat', 'lng', 'speed', 'orientation', 'gpstime',
     'routeId', 'inDepo', 'busNumber', 'perevId', 'perevName', 'remark', 'online'
