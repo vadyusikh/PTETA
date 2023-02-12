@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from transport.BaseDBAccessDataclass import BaseDBAccessDataclass
+from PTETA.utils.transport.BaseDBAccessDataclass import BaseDBAccessDataclass
 
 
 @dataclass

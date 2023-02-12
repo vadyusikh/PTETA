@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from transport.TransportAVLData import TransportAVLData
-from transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
+from PTETA.utils.transport.TransportAVLData import TransportAVLData
+from PTETA.utils.transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
 
 
 @dataclass

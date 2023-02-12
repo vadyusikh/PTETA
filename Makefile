@@ -10,7 +10,7 @@ build_listener_chernivtsi:
 	docker build --network=host -t listener_chernivtsi:$(LISTENER_TAG) --target listener_chernivtsi .
 
 build_base_no_cache:
-	docker build --no-cache --network=host -t base:latest .
+	docker build --no-cache --network=host -t listener_base:$(LISTENER_TAG) .
 
 run_base_foreground : build_listener
 	docker run \
@@ -31,25 +31,25 @@ run_listener_chernivtsi_foreground : build_listener_chernivtsi
 	-it --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
-	listener_chernivtsi:$(LISTENER_TAG) /bin/bash
+	listener_chernivtsi:$(LISTENER_TAG)
 
 run_listener_chernivtsi_background : build_listener_chernivtsi
 	docker run \
 	-d --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
-	listener_chernivtsi:$(LISTENER_TAG) /bin/bash
+	listener_chernivtsi:$(LISTENER_TAG)
 
 run_listener_kharkiv_foreground : build_listener_kharkiv
 	docker run \
 	-it --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
-	listener_kharkiv:$(LISTENER_TAG) /bin/bash
+	listener_kharkiv:$(LISTENER_TAG)
 
 run_listener_kharkiv_background : build_listener_kharkiv
 	docker run \
 	-d --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
-	listener_kharkiv:$(LISTENER_TAG) /bin/bash
+	listener_kharkiv:$(LISTENER_TAG)

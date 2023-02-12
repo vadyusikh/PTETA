@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from psycopg2.extensions import connection as Connection
 
-from transport.TransportVehicle import TransportVehicle
-from transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
+from PTETA.utils.transport.TransportVehicle import TransportVehicle
+from PTETA.utils.transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
 
 
 @dataclass

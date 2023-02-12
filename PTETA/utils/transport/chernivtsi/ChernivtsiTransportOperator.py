@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from transport.TransportOperator import TransportOperator
-from transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
+from PTETA.utils.transport.TransportOperator import TransportOperator
+from PTETA.utils.transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
 
 
 @dataclass
