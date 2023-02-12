@@ -87,6 +87,8 @@ def process_data(
     avl_data_list = []
     while not request_queue.empty():
         response = request_queue.get()
+        if 'rows' not in response.keys():
+            return
         avl_data_list += [
             row + [response['timestamp'], response['response_datetime']]
             for row in response['rows']
