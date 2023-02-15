@@ -140,8 +140,16 @@ class TransGPSCVMonitor:
                 self.update_db(new_obj)
 
         for i, (vehicle, route) in enumerate(zip(vehicle_list, route_list)):
-            avl_data_list[i].vehicle_id = self.vehicle_to_id[vehicle]
-            avl_data_list[i].route_id = self.route_to_id[route]
+            try:
+                avl_data_list[i].vehicle_id = self.vehicle_to_id[vehicle]
+                avl_data_list[i].route_id = self.route_to_id[route]
+            except KeyError as ke:
+                print(ke)
+                time.sleep(0.2)
+                self.reload_routes()
+                self.reload_vehicles()
+                avl_data_list[i].vehicle_id = self.vehicle_to_id[vehicle]
+                avl_data_list[i].route_id = self.route_to_id[route]
 
         try:
             self.avl_data_cls.insert_many_in_table(self.db_connection, avl_data_list)
