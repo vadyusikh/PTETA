@@ -3,6 +3,7 @@ from datetime import datetime
 
 from PTETA.utils.transport.TransportAVLData import TransportAVLData
 from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
+from PTETA.utils.transport.functions import cast_if_possible
 
 
 @dataclass
@@ -38,19 +39,18 @@ class KharkivTransportAVLData(TransportAVLData, BaseDBAccessDataclass):
                  vehicle_id: int, response_datetime: str, route_id: int=None, **kwargs):
         self.lat = float(lat)
         self.lng = float(lng)
-        self.speed = float(speed) if not(speed is None) else "NULL"
-        self.orientation = float(orientation) if not(orientation is None) else "NULL"
+        self.speed = cast_if_possible(speed, float, "NULL")
+        self.orientation = cast_if_possible(orientation, float, "NULL")
         self.gpstime = str(gpstime)
         self.gps_datetime_origin = int(gps_datetime_origin)
-        self.dd = int(dd) if not(dd is None) else "NULL"
-        self.vehicle_id = int(vehicle_id) if not(vehicle_id is None) else None
-        self.route_id = int(route_id) if not(route_id is None) else None
+        self.dd = cast_if_possible(dd, int, "NULL")
+        self.vehicle_id = cast_if_possible(vehicle_id, int)
+        self.route_id = cast_if_possible(route_id, int)
         self.response_datetime = str(response_datetime)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportAVLData':
         return KharkivTransportAVLData(**response_row)
-
 
     def __eq__(self, other: 'KharkivTransportAVLData') -> bool:
         return isinstance(other, self.__class__) \

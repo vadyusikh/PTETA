@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from PTETA.utils.transport.TransportOperator import TransportOperator
 from PTETA.utils.transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
+from PTETA.utils.transport.functions import cast_if_possible
 
 
 @dataclass
@@ -17,8 +18,8 @@ class ChernivtsiTransportOperator(TransportOperator, ChernivtsiBaseDBAccessDatac
     name: str
 
     def __init__(self, perev_name: str, id: int = -1, **kwargs):
-        self.id = int(id) if not(id is None) else -1
-        self.name = str(perev_name) if perev_name else "UNKNOWN"
+        self.id = cast_if_possible(id, int, -1)
+        self.name = cast_if_possible(perev_name, str, "UNKNOWN")
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportOperator':

@@ -25,11 +25,12 @@ def main():
     kharkiv_folder_path = Path("../data/local/jsons/kharkiv/archive/optimized")
 
     file_path_list = list(kharkiv_folder_path.iterdir())
-    print(file_path_list)
+    print([p.name for p in file_path_list])
     file_path_list = sorted(file_path_list,
                             key=lambda p: datetime.strptime(p.name[11:22], '%d_%b_%Y'))
-    print(file_path_list)
+    print([p.name for p in file_path_list])
 
+    # return
     for df_path in tqdm(file_path_list):
         print(f"{df_path.name}")
         df_sum = pd.read_parquet(df_path)

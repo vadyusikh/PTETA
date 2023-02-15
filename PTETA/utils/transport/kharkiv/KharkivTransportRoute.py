@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from PTETA.utils.transport.TransportRoute import TransportRoute
 from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
+from PTETA.utils.transport.functions import cast_if_possible
 
 
 @dataclass
@@ -19,9 +20,9 @@ class KharkivTransportRoute(TransportRoute, BaseDBAccessDataclass):
     type: int
 
     def __init__(self, name: str, type: int, id: int = None, **kwargs):
-        self.id = int(id) if not (id is None) else None
-        self.name = str(name) if not ((name is None) or (name == '')) else "UNKNOWN"
-        self.type = int(type) if not (type is None) else -1
+        self.id = cast_if_possible(id, int)
+        self.name = cast_if_possible(name, str, "UNKNOWN")
+        self.type = cast_if_possible(type, int, -1)
 
     def __eq__(self, other: 'KharkivTransportRoute') -> bool:
         return isinstance(other, self.__class__) \

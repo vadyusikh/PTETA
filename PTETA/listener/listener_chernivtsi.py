@@ -14,7 +14,7 @@ from PTETA.listener.utils.support_classes import LockingCounter
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 
-REQUEST_FREQUENCY = 1.05
+REQUEST_FREQUENCY = 5
 PROCESS_FREQUENCY = 30
 
 START_DATE = datetime.now().strftime(DATETIME_PATTERN)
@@ -149,7 +149,7 @@ def main():
 
     monitor = TransGPSCVMonitor(connection_config=connection_config, data_model="chernivtsi")
 
-    scheduler = BackgroundScheduler(job_defaults={'max_instances': 8})
+    scheduler = BackgroundScheduler(job_defaults={'max_instances': 16})
     scheduler.add_job(
         request_data,
         args=(request_queue, request_counter),

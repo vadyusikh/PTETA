@@ -3,6 +3,7 @@ from datetime import datetime
 
 from PTETA.utils.transport.TransportAVLData import TransportAVLData
 from PTETA.utils.transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
+from PTETA.utils.transport.functions import cast_if_possible
 
 
 @dataclass
@@ -37,13 +38,13 @@ class ChernivtsiTransportAVLData(TransportAVLData, ChernivtsiBaseDBAccessDatacla
                  vehicle_id: int = None, route_id: int = None, **kwargs):
         self.lat = float(lat)
         self.lng = float(lng)
-        self.speed = float(speed) if not(speed is None) else "NULL"
-        self.orientation = float(orientation) if not(orientation is None) else "NULL"
+        self.speed = cast_if_possible(speed, float, -1)
+        self.orientation = cast_if_possible(orientation, float, -1)
         self.gpstime = str(gpstime)
         self.in_depo = bool(in_depo)
-        self.vehicle_id = int(vehicle_id) if not(vehicle_id is None) else None
-        self.route_id = int(route_id) if not(route_id is None) else None
-        self.response_datetime = str(response_datetime)
+        self.vehicle_id = cast_if_possible(vehicle_id, int)
+        self.route_id = cast_if_possible(route_id, int)
+        self.response_datetime = cast_if_possible(response_datetime, str)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportAVLData':
@@ -86,7 +87,7 @@ class ChernivtsiTransportAVLData(TransportAVLData, ChernivtsiBaseDBAccessDatacla
         return f' "lat" = \'{avl_data.lat}\' ' + \
                   f'AND "lng" = \'{avl_data.lng}\' ' + \
                   f'AND "speed" = \'{avl_data.speed}\' ' + \
-                  f'AND "orientation" = \'{avl_data.orientation}\' ' + \
+                  f'AND "orientation" = {avl_data.orientation} ' + \
                   f'AND "gpstime" = \'{avl_data.gpstime}\' ' + \
                   f'AND "in_depo" = {avl_data.in_depo} ' + \
                   f'AND "vehicle_id" = {avl_data.vehicle_id} ' + \
@@ -100,6 +101,6 @@ class ChernivtsiTransportAVLData(TransportAVLData, ChernivtsiBaseDBAccessDatacla
     @classmethod
     def __insert_expression__(cls, avl_data: 'ChernivtsiTransportAVLData') -> str:
         return f"('{avl_data.lat}', '{avl_data.lng}', '{avl_data.speed}', " \
-               f"'{avl_data.orientation}', '{avl_data.gpstime}', '{avl_data.in_depo}', " \
+               f"{avl_data.orientation}, '{avl_data.gpstime}', '{avl_data.in_depo}', " \
                f"'{avl_data.vehicle_id}', '{avl_data.route_id}', " \
                f""" { f"'{avl_data.response_datetime}'" if avl_data.response_datetime else 'NULL'})"""

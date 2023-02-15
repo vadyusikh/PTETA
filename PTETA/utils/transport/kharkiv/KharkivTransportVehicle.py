@@ -3,6 +3,7 @@ from psycopg2.extensions import connection as Connection
 
 from PTETA.utils.transport.TransportVehicle import TransportVehicle
 from PTETA.utils.transport.kharkiv.KharkivBaseDBAccessDataclass import BaseDBAccessDataclass
+from PTETA.utils.transport.functions import cast_if_possible
 
 
 @dataclass
@@ -23,10 +24,10 @@ class KharkivTransportVehicle(TransportVehicle, BaseDBAccessDataclass):
     owner_id: int
 
     def __init__(self, imei: str, name: str, owner_id: int, id: int = None, **kwargs):
-        self.id = int(id) if not(id is None) else None
+        self.id = cast_if_possible(id, int)
         self.imei = str(imei)
-        self.name = str(name) if not(name is None) else "NULL"
-        self.owner_id = int(owner_id) if not(id is None) else -1
+        self.name = cast_if_possible(name, str, "NULL")
+        self.owner_id = cast_if_possible(owner_id, int, -1)
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'KharkivTransportVehicle':

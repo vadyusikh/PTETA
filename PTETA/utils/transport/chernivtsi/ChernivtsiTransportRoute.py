@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from PTETA.utils.transport.TransportRoute import TransportRoute
 from PTETA.utils.transport.chernivtsi.ChernivtsiBaseDBAccessDataclass import ChernivtsiBaseDBAccessDataclass
+from PTETA.utils.transport.functions import cast_if_possible
 
 
 @dataclass()
@@ -19,9 +20,9 @@ class ChernivtsiTransportRoute(TransportRoute, ChernivtsiBaseDBAccessDataclass):
     colour: str
 
     def __init__(self, route_name: str, route_colour: str, id: int = None, **kwargs):
-        self.id = int(id) if not (id is None) else None
-        self.name = str(route_name) if not ((route_name is None) or (route_name == '')) else "UNKNOWN"
-        self.colour = str(route_colour) if not ((route_colour is None) or (route_colour == '')) else "None"
+        self.id = cast_if_possible(id, int)
+        self.name = cast_if_possible(route_name, str, "UNKNOWN")
+        self.colour = cast_if_possible(route_colour, str, "None")
 
     @classmethod
     def from_response_row(cls, response_row: dict) -> 'ChernivtsiTransportRoute':
