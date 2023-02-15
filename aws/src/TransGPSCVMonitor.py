@@ -99,6 +99,7 @@ class TransGPSCVMonitor:
 
         for obj in obj_to_insert:
             obj.insert_many_in_table(self.db_connection, [obj])
+            time.sleep(0.1)
             if isinstance(obj, self.operator_cls):
                 self.reload_operators()
             elif isinstance(obj, self.route_cls):

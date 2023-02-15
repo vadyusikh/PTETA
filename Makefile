@@ -21,7 +21,7 @@ run_base_foreground : build_listener
 
 run_base_background : build_listener
 	docker run \
-	-d --rm --network=host -p 8080:8080 \
+	-dit --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_base:$(LISTENER_TAG) /bin/bash
@@ -33,9 +33,10 @@ run_listener_chernivtsi_foreground : build_listener_chernivtsi
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_chernivtsi:$(LISTENER_TAG)
 
+#docker run -dit --rm --network=host -e RDS_HOSTNAME=${RDS_HOSTNAME} -e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} listener_chernivtsi:v1.1.0
 run_listener_chernivtsi_background : build_listener_chernivtsi
 	docker run \
-	-d --rm --network=host -p 8080:8080 \
+	-dit --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_chernivtsi:$(LISTENER_TAG)
@@ -47,9 +48,10 @@ run_listener_kharkiv_foreground : build_listener_kharkiv
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_kharkiv:$(LISTENER_TAG)
 
+#docker run -dit --rm --network=host -e RDS_HOSTNAME=${RDS_HOSTNAME} -e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} listener_kharkiv:v1.1.0
 run_listener_kharkiv_background : build_listener_kharkiv
 	docker run \
-	-d --rm --network=host -p 8080:8080 \
+	-dit --rm --network=host -p 8080:8080 \
 	-e RDS_HOSTNAME=${RDS_HOSTNAME} \
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_kharkiv:$(LISTENER_TAG)
