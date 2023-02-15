@@ -172,6 +172,8 @@ def main():
         'password': os.environ['RDS_PTETA_DB_PASSWORD']
     })
 
+    print(f"connection_config is\n\t{connection_config}")
+
     monitor = TransGPSCVMonitor(connection_config=connection_config, data_model="kharkiv")
 
     scheduler = BackgroundScheduler(job_defaults={'max_instances': 8})

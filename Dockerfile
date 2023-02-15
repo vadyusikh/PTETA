@@ -16,17 +16,17 @@ ENV PYTHONPATH /app
 CMD [ "bash" ]
 
 
-# listener_kharkiv
-FROM listener_base as listener_kharkiv
+# listener_chernivtsi
+FROM listener_base as listener_chernivtsi
 
 COPY . .
 
 CMD [ "python3", "PTETA/listener/listener_chernivtsi.py" ]
 
 
-# listener_chernivtsi
-FROM listener_base as listener_chernivtsi
+# listener_kharkiv
+FROM listener_base as listener_kharkiv
 
 COPY . .
 
-CMD [ "python3", "PTETA/listener/listener_kharkiv.py" ]
+CMD [ "python3", "PTETA/listener/listener_kharkiv_to_db.py" ]
