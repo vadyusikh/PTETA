@@ -1,4 +1,4 @@
-LISTENER_TAG=v1.1.0
+LISTENER_TAG=v1.2.0
 
 build_listener_base:
 	docker build --network=host -t listener_base:$(LISTENER_TAG) --target listener_base .
