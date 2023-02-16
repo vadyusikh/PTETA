@@ -7,18 +7,18 @@ remove_image:
 	docker image ls | grep APP_NAME | while read name tag id others; do if ! [ $id = $image_id ]; then docker image rm --force $id; fi ; done
 
 build_listener_base:
-	IMAGE_NAME=listener_base
-	remove_image
+	export IMAGE_NAME=listener_base
+	make remove_image
 	docker build --network=host -t listener_base:$(LISTENER_TAG) --target listener_base .
 
 build_listener_kharkiv:
-	IMAGE_NAME=listener_kharkiv
-	remove_image
+	export IMAGE_NAME=listener_kharkiv
+	make remove_image
 	docker build --network=host -t listener_kharkiv:$(LISTENER_TAG) --target listener_kharkiv .
 
 build_listener_chernivtsi:
-	IMAGE_NAME=listener_chernivtsi
-	remove_image
+	export IMAGE_NAME=listener_chernivtsi
+	make remove_image
 	docker build --network=host -t listener_chernivtsi:$(LISTENER_TAG) --target listener_chernivtsi .
 
 build_base_no_cache:
