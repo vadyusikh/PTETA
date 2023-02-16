@@ -1,12 +1,24 @@
 LISTENER_TAG=v1.2.0
 
+remove_image:
+	sha=$(docker image inspect $(IMAGE_NAME):$(LISTENER_TAG) -f '{{.ID}}')
+	image_sha=$(echo $sha | cut -d':' -f2)
+	image_id=$(echo $image_sha | head -c 12)
+	docker image ls | grep APP_NAME | while read name tag id others; do if ! [ $id = $image_id ]; then docker image rm --force $id; fi ; done
+
 build_listener_base:
+	IMAGE_NAME=listener_base
+	remove_image
 	docker build --network=host -t listener_base:$(LISTENER_TAG) --target listener_base .
 
 build_listener_kharkiv:
+	IMAGE_NAME=listener_kharkiv
+	remove_image
 	docker build --network=host -t listener_kharkiv:$(LISTENER_TAG) --target listener_kharkiv .
 
 build_listener_chernivtsi:
+	IMAGE_NAME=listener_chernivtsi
+	remove_image
 	docker build --network=host -t listener_chernivtsi:$(LISTENER_TAG) --target listener_chernivtsi .
 
 build_base_no_cache:
@@ -33,7 +45,7 @@ run_listener_chernivtsi_foreground : build_listener_chernivtsi
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_chernivtsi:$(LISTENER_TAG)
 
-#docker run -dit --rm --network=host -e RDS_HOSTNAME=${RDS_HOSTNAME} -e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} listener_chernivtsi:v1.1.0
+#docker run -dit --rm --network=host -e RDS_HOSTNAME=${RDS_HOSTNAME} -e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} listener_chernivtsi:v1.2.0
 run_listener_chernivtsi_background : build_listener_chernivtsi
 	docker run \
 	-dit --rm --network=host -p 8080:8080 \
@@ -48,7 +60,7 @@ run_listener_kharkiv_foreground : build_listener_kharkiv
 	-e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} \
 	listener_kharkiv:$(LISTENER_TAG)
 
-#docker run -dit --rm --network=host -e RDS_HOSTNAME=${RDS_HOSTNAME} -e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} listener_kharkiv:v1.1.0
+#docker run -dit --rm --network=host -e RDS_HOSTNAME=${RDS_HOSTNAME} -e RDS_PTETA_DB_PASSWORD=${RDS_PTETA_DB_PASSWORD} listener_kharkiv:v1.2.0
 run_listener_kharkiv_background : build_listener_kharkiv
 	docker run \
 	-dit --rm --network=host -p 8080:8080 \
