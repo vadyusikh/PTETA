@@ -22,6 +22,8 @@ build_listener_chernivtsi:
 	docker build --network=host -t listener_chernivtsi:$(LISTENER_TAG) --target listener_chernivtsi .
 
 build_base_no_cache:
+	export IMAGE_NAME=listener_base
+	make remove_image
 	docker build --no-cache --network=host -t listener_base:$(LISTENER_TAG) .
 
 run_base_foreground : build_listener

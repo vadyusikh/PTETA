@@ -28,6 +28,7 @@ def main():
     print([p.name for p in file_path_list])
     file_path_list = sorted(file_path_list,
                             key=lambda p: datetime.strptime(p.name[11:22], '%d_%b_%Y'))
+    file_path_list = file_path_list[-2:]
     print([p.name for p in file_path_list])
 
     # return
