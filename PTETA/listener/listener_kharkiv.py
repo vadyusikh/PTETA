@@ -1,5 +1,6 @@
 from dateutil.tz import tzlocal
 from datetime import datetime
+import datetime as dt
 import json
 import requests
 import pathlib
@@ -12,9 +13,14 @@ import pandas as pd
 from tqdm import tqdm
 
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
-END_DATE = '2023-02-27 23:59:00'
-START_DATE = '2022-10-03 00:03:00'
+DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
+
 REQ_TIME_DELTA = 5.0
+PROCESS_FREQUENCY = 30
+
+START_DATE = datetime.now().strftime(DATETIME_PATTERN)
+END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)
+END_DATE_2 = (datetime.now() + dt.timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
 
 response_prev = dict()
 
