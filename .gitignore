@@ -1,5 +1,7 @@
 ## PROJECT SPECIFIC IGNORS
 *.keys
+*.pem
+
 .idea
 data/local/*
 /PTETA/configs/key_configs.py

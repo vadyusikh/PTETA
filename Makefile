@@ -1,4 +1,6 @@
 LISTENER_TAG=v1.2.0
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
 
 remove_image:
 	sha=$(docker image inspect $(IMAGE_NAME):$(LISTENER_TAG) -f '{{.ID}}')

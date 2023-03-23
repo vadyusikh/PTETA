@@ -1,10 +1,13 @@
 FROM python:3.11.1-slim as listener_base
-
 LABEL mainteiner="Vadym Honcharenko"
 
-RUN apt-get update && apt-get install make && apt-get install nano
+RUN useradd --create-home appuser
+USER appuser
 
-WORKDIR /app
+WORKDIR /home/appuser/app
+RUN pip install --user .
+
+RUN apt-get update && apt-get install make && apt-get install nano
 
 COPY PTETA/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
