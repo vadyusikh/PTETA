@@ -1,10 +1,10 @@
 name: Publish images
 
 on:
-  release: 
-    types:[published]
-  schedule: 
-    - cron: "0 20 * * Sat"
+  release:
+    types: [published]
+  schedule:
+    - cron:  '0 20 * * Sat'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
