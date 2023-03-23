@@ -1,0 +1,32 @@
+name: Publish images
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron:  '0 20 * * Sat'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE_NAME: pteta
+  DOCKER_IMAGE_VERSION : latest
+#   DOCKER_IMAGE_FULL_NAME : ${{env.DOCKER_IMAGE_NAME}}:${{env.DOCKER_IMAGE_VERSION}}
+#   DOCKER_IMAGE_HUB_PATH : ${{ secrets.DOCKER_HUB_USERNAME }}/${{env.DOCKER_IMAGE_NAME}}:${{env.DOCKER_IMAGE_VERSION}}
+  
+jobs:
+  update: 
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3
+      - name: Get release version 
+        id: get_version 
+        run: |
+          RELEASE_VERSION=${GITHUB_REF:10}
+          echo ${GITHUB_REF:10}
+      - name: Echo variables
+        run: |
+          echo DOCKER_IMAGE_NAME=${{env.DOCKER_IMAGE_NAME}}
+          echo DOCKER_IMAGE_VERSION=${{env.DOCKER_IMAGE_VERSION}}
+          echo RELEASE_VERSION=${{env.RELEASE_VERSION}}
+    
