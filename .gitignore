@@ -4,6 +4,8 @@
 
 .idea
 data/local/*
+data/tables/*
+config/keys/*
 /PTETA/configs/key_configs.py
 notebooks/kharkiv/images_gps_loc_identification/*
 notebooks/kharkiv/responses_examples/*

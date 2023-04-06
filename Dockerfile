@@ -3,7 +3,7 @@ LABEL mainteiner="Vadym Honcharenko"
 
 RUN apt-get update && apt-get install make && apt-get install nano
 
-WORKDIR /home/app
+WORKDIR /app
 
 COPY PTETA/requirements.txt requirements.txt
 RUN pip install --user -r requirements.txt
