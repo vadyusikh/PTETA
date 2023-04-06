@@ -20,7 +20,7 @@ FROM listener_base as listener_chernivtsi
 
 COPY . .
 
-CMD [ "python3", "PTETA/listener/listener_chernivtsi.py" ]
+CMD [ "python3", "PTETA/listener/listener_chernivtsi_to_db.py" ]
 
 
 # listener_kharkiv
