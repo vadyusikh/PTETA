@@ -55,12 +55,12 @@ class ChernivtsiTransportRoute(TransportRoute, ChernivtsiBaseDBAccessDataclass):
 
     @classmethod
     def __where_expression__(cls, route: 'ChernivtsiTransportRoute') -> str:
-        return f""""id" = {route.id} AND "route_name" = '{route.name}'"""
+        return f""""route_name" = '{route.name}' AND "route_colour" = '{route.colour}'"""
 
     @classmethod
     def __insert_columns__(cls) -> str:
-        return '"id", "route_name", "route_colour"'
+        return '"route_name", "route_colour"'
 
     @classmethod
     def __insert_expression__(cls, route: 'ChernivtsiTransportRoute') -> str:
-        return f"('{route.id}', '{route.name}', '{route.colour}')"
+        return f"('{route.name}', '{route.colour}')"

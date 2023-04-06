@@ -6,6 +6,7 @@ SELECT * FROM pteta_v2.OWNER
 
 SELECT date_trunc('day', gd.gpstime), COUNT(*) 
 	FROM pteta_v2.gpsdata as gd
+	WHERE gd.gpstime > '2023-04-01 00:00:00'
 	GROUP BY date_trunc('day', gd.gpstime)
 LIMIT 100
 
@@ -24,7 +25,7 @@ LIMIT 100
 
 SELECT *
 	FROM pteta_v2.gpsdata as gd
-	WHERE gd.gpstime > '2023-02-03 00:00:00'
+	WHERE gd.gpstime > '2023-03-03 00:00:00'
 	ORDER BY gd.edited DESC
 LIMIT 150
 
@@ -54,7 +55,8 @@ date_trunc('day', gd.gpstime)
 
 SELECT date_trunc('HOUR', gd.gpstime), COUNT(*) 
 	FROM kharkiv.gpsdata as gd
-	WHERE gd.gpstime > NOW() - interval '30 DAY'
+--	WHERE gd.gpstime > NOW() - interval '30 DAY'
+	WHERE gd.gpstime > '2023-04-01 00:00:00'
 	GROUP BY date_trunc('HOUR', gd.gpstime)
 LIMIT 500
 

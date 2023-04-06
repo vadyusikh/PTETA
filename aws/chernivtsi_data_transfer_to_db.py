@@ -21,18 +21,18 @@ BATCH_SIZE = 1_000
 def main():
     monitor = TransGPSCVMonitor(CONNECTION_CONFIG, data_model="chernivtsi")
 
-    file_path_list = list(Path("D:/projects/pet_project/tables/parquet").iterdir())
+    file_path_list = list(Path("../data/tables").iterdir())
     file_path_list = sorted(file_path_list,
-                            key=lambda p: datetime.strptime(p.name[9:-8], '%d_%b_%Y'))
+                            key=lambda p: datetime.strptime(p.name[9:-4], '%d_%b_%Y'))
     file_path_list = file_path_list[-10:]
 
     # for df_path in tqdm(file_path_list[5:]):
     # a = 12 + 4 + 9 + 9 + 23 + 3 + 9 + 5 + 3 + 5
-    for df_path in tqdm(file_path_list[2:15]):
+    for df_path in tqdm(file_path_list[:]):
         print(df_path.name)
 
-        # df_sum = pd.read_csv(df_path, encoding='utf-8', low_memory=False)
-        df_sum = pd.read_parquet(df_path)
+        df_sum = pd.read_csv(df_path, encoding='utf-8', low_memory=False)
+        # df_sum = pd.read_parquet(df_path)
         del df_sum["id"]
         df_sum = df_sum[:]
 
