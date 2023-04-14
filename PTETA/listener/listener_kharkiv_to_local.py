@@ -12,6 +12,10 @@ import pandas as pd
 
 from tqdm import tqdm
 
+KHARKIV_FOLDER_PATH = pathlib.Path("../../data/local/kharkiv")
+KH_REQUESTS_PATH = KHARKIV_FOLDER_PATH / "jsons"
+KH_TABLES_PATH = KHARKIV_FOLDER_PATH / "tables"
+
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 
@@ -26,7 +30,7 @@ response_prev = dict()
 
 
 def get_response_folder(datetime_):
-    return f"../../data/local/jsons/kharkiv/trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
+    return KH_REQUESTS_PATH/f"trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
 
 
 def request_data():
@@ -59,7 +63,7 @@ def load_responses(resp_path):
     resp_tm = datetime.strptime(resp_path.name[6:-5], '%Y-%m-%d %H;%M;%S')
     resp_tm_str = resp_tm.replace(tzinfo=tzlocal()).isoformat()
 
-    with open(resp_path) as f:
+    with open(resp_path, 'r', encoding='utf-8') as f:
         resp = json.load(f)
         if ("rows" in resp) and (resp["rows"]):
             return [row + [resp['timestamp'], resp_tm_str]
@@ -78,8 +82,7 @@ def accumulate_responses_from_folder(folder_path):
         resp_list = []
         for resp_ in results:
             resp_list += resp_
-        print(f"Accumulate responses from folder\n" \
-              f"\t{len(resp_list)} / {len(resp_list)} [avg={len(resp_list) / len(resp_list):.2f}]")
+        print(f"Accumulate responses from folder - {len(resp_list)}")
 
     columns = ['imei', 'lat', 'lng', 'speed', 'gps_datetime_origin', 'orientation', 'route_name',
                'route_type', 'vehicle_id', 'dd', 'gpstime', 'response_datetime']
@@ -104,22 +107,25 @@ def clear_data(in_df):
         unique_data += result
 
     df_unique = pd.DataFrame(unique_data, columns=in_df.columns)
-    print(f"Clear data\n\t{len(in_df)} / {len(df_unique)} [avg {len(in_df) / len(df_unique):.02f}]")
+    if len(df_unique) == 0:
+        print(f"Clear data is empty (Input len is {len(in_df)}, cleared size is / {len(df_unique)})")
+    else:
+        print(f"Clear data\n\t{len(in_df)} / {len(df_unique)} [avg {len(in_df) / len(df_unique):.02f}]")
     return df_unique
 
 
 def after_process_data():
-    kharkiv_folder_path = pathlib.Path("../../data/local/jsons/kharkiv")
-    kharkiv_folder_list = [p for p in kharkiv_folder_path.iterdir() if "trans_data_" in p.name]
-    kharkiv_folders_list = sorted(kharkiv_folder_list,
-                                  key=lambda p: datetime.strptime(p.name[11:], '%d_%b_%Y'))
+    kharkiv_req_list = [p for p in KH_REQUESTS_PATH.iterdir() if "trans_data_" in p.name]
+    kharkiv_reqs_list = sorted(kharkiv_req_list,
+                               key=lambda p: datetime.strptime(p.name[11:], '%d_%b_%Y'))
 
-    for folder_path in tqdm(kharkiv_folders_list[:-1]):
+    for folder_path in tqdm(kharkiv_reqs_list[:-1]):
+        print(f"Processing '{folder_path}'")
         df = accumulate_responses_from_folder(folder_path)
-        df.to_parquet(folder_path.parent / 'archive/origin' / (folder_path.name + '_origin.parquet'))
+        df.to_parquet(KH_TABLES_PATH / 'origin' / (folder_path.name + '_origin.parquet'))
 
         df_u = clear_data(df)
-        df_u.to_parquet(folder_path.parent / 'archive/optimized' / (folder_path.name + '_optimized.parquet'))
+        df_u.to_parquet(KH_TABLES_PATH / 'optimized' / (folder_path.name + '_optimized.parquet'))
 
 
 def main():

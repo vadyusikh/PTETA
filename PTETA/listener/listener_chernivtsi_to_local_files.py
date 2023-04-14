@@ -11,7 +11,10 @@ import time
 from tqdm.auto import tqdm
 import zipfile
 
+# chernivtsi
 from apscheduler.schedulers.background import BackgroundScheduler
+
+BASE_DATA_PATH = pathlib.Path(f"../../data/local/chernivtsi")
 
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
@@ -27,7 +30,7 @@ response_prev = dict()
 
 
 def get_response_folder(datetime_):
-    return f"../../data/local/jsons/chernivtsi/trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
+    return BASE_DATA_PATH / f"jsons/trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
 
 
 def request_data():
@@ -58,7 +61,7 @@ def request_data():
             resp['response_datetime'] = dt_now_str
 
         if optimized_data_list:
-            path = f"trans_data_{dt_now.strftime('%d_%b_%Y').upper()}"
+            path = get_response_folder(dt_now)
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
             f_name = pathlib.Path(f"trans_{dt_now_file_str}.json")
@@ -112,13 +115,15 @@ def folder_to_df(folder):
         )
 
     df_ = get_df(results)
-    df_.to_parquet(f"tables/data_for_{str(folder)[11:]}.csv", encoding='utf-8', index=False, header=True)
+    df_file_path = BASE_DATA_PATH/f"tables/data_for_{str(folder.name)[11:]}.parquet"
+    df_.to_parquet(df_file_path, encoding='utf-8', index=False, header=True)
 
 
 def afterprocess_data():
     print(f"Data aterprocessing started at {datetime.now()}")
-    folders_list = [p for p in pathlib.Path().iterdir() if 'trans_data_' in str(p)]
-    folders_list = sorted(folders_list, key=lambda x: datetime.strptime(str(x)[11:], '%d_%b_%Y'))[:-1]
+    request_folders = BASE_DATA_PATH / f"jsons"
+    folders_list = [p for p in request_folders.iterdir() if 'trans_data_' in str(p)]
+    folders_list = sorted(folders_list, key=lambda x: datetime.strptime(str(x.name)[11:], '%d_%b_%Y'))[:-1]
     print(f"\tFolders to process {folders_list}")
     pbar = tqdm(folders_list, leave=False)
     for folder in pbar:
@@ -161,8 +166,8 @@ def main():
         prev_update = datetime.now().replace(minute=0, second=0, microsecond=0)
         while 1:
             dt_now = datetime.now()
-            path = f"trans_data_{dt_now.strftime('%d_%b_%Y').upper()}"
-            try:  # for cases folder don't exist yet
+            path = get_response_folder(dt_now)
+            try:  # in cases folder don't exist yet
                 files_list = list(pathlib.Path(path).iterdir())
             except:
                 files_list = []
