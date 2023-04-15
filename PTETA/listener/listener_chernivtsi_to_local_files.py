@@ -1,18 +1,19 @@
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 import datetime as dt
 import json
-import requests
-import os
-import pandas as pd
 import pathlib
 import shutil
 import time
-from tqdm.auto import tqdm
-import zipfile
+from datetime import datetime
 
+import pandas as pd
+import requests
 # chernivtsi
 from apscheduler.schedulers.background import BackgroundScheduler
+from tqdm.auto import tqdm
+
+from PTETA.listener.utils.functions import \
+    dict_special_comparator, \
+    load_all_responses
 
 BASE_DATA_PATH = pathlib.Path(f"../../data/local/chernivtsi")
 
@@ -51,7 +52,7 @@ def request_data():
 
         optimized_data_list = list()
         for imei in keys_prev.intersection(keys_cur):
-            if response_prev[imei] != response_cur[imei]:
+            if not dict_special_comparator(response_prev[imei], response_cur[imei]):
                 optimized_data_list += [response_cur[imei]]
 
         for imei in keys_cur.difference(keys_prev):
@@ -80,16 +81,6 @@ def request_data():
               f"\t{err}\n")
 
 
-def load_responses(f_path):
-    try:
-        with open(f_path, 'r', encoding='utf-8') as file:
-            return (json.load(file), None)
-    except Exception as e:
-        print(f"Unable to open : {f_path}")
-        print(f"Exception is '{e}'")
-        return (None, file)
-
-
 def get_df(jsons_content):
     data = list()
     for r in jsons_content:
@@ -103,19 +94,8 @@ def get_df(jsons_content):
 
 
 def folder_to_df(folder):
-    f_path_list = sorted(list(folder.iterdir()))
-
-    with ThreadPoolExecutor(max_workers=40) as executor:
-        results = list(
-            tqdm(
-                executor.map(load_responses, f_path_list),
-                total=len(f_path_list), miniters=int(len(f_path_list) // 10),
-                desc=f"Read {str(folder)} to write df", ascii=True
-            )
-        )
-
-    df_ = get_df(results)
-    df_file_path = BASE_DATA_PATH/f"tables/data_for_{str(folder.name)[11:]}.parquet"
+    df_ = get_df(load_all_responses(folder))
+    df_file_path = BASE_DATA_PATH / f"tables/data_for_{str(folder.name)[11:]}.parquet"
     df_.to_parquet(df_file_path, encoding='utf-8', index=False, header=True)
 
 
