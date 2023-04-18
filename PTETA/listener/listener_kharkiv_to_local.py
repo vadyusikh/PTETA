@@ -1,15 +1,12 @@
-from dateutil.tz import tzlocal
-from datetime import datetime
-import datetime as dt
 import json
-import requests
 import pathlib
 import time
-
-from apscheduler.schedulers.background import BackgroundScheduler
 from concurrent.futures import ThreadPoolExecutor
-import pandas as pd
+from datetime import datetime, timedelta, timezone
 
+import pandas as pd
+import requests
+from apscheduler.schedulers.background import BackgroundScheduler
 from tqdm import tqdm
 
 KHARKIV_FOLDER_PATH = pathlib.Path("../../data/local/kharkiv")
@@ -18,19 +15,20 @@ KH_TABLES_PATH = KHARKIV_FOLDER_PATH / "tables"
 
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
+DATETIME_FILENAME_FORMAT = '%Y-%m-%d %H;%M;%S%z'
 
 REQ_TIME_DELTA = 5.0
 PROCESS_FREQUENCY = 30
 
-START_DATE = datetime.now().strftime(DATETIME_PATTERN)
-END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)
-END_DATE_2 = (datetime.now() + dt.timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
+START_DATE = (datetime.now().replace(hour=3, minute=15) - timedelta(days=1)).strftime(DATETIME_PATTERN)
+END_DATE = (datetime.now() + timedelta(days=30)).strftime(DATETIME_PATTERN)
+END_DATE_2 = (datetime.now() + timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
 
 response_prev = dict()
 
 
 def get_response_folder(datetime_):
-    return KH_REQUESTS_PATH/f"trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
+    return KH_REQUESTS_PATH / f"trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
 
 
 def request_data():
@@ -45,23 +43,23 @@ def request_data():
         path = get_response_folder(dt_now)
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-        f_name = pathlib.Path(f"trans_{dt_now.strftime('%Y-%m-%d %H;%M;%S')}.json")
+        f_name = pathlib.Path(f"trans_{dt_now.astimezone(timezone.utc).strftime(DATETIME_FILENAME_FORMAT)}.json")
 
         if (path / f_name).is_file():
-            print(f"{dt_now.strftime('%Y-%m-%d %H;%M;%S')} : '{f_name}' file is already exists!")
+            print(f"{dt_now.strftime(DATETIME_PATTERN)} : '{f_name}' file is already exists!")
             return
 
-        with open(str(path/f_name), 'w', encoding='utf8') as out_f:
+        with open(str(path / f_name), 'w', encoding='utf8') as out_f:
             json.dump(response, out_f, ensure_ascii=False)
 
     except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as err:
-        print(f"{dt_now.strftime('%Y-%m-%d %H;%M;%S')} : error while trying to GET data\n"
+        print(f"{dt_now.strftime(DATETIME_PATTERN)} : error while trying to GET data\n"
               f"\t{err}\n")
 
 
 def load_responses(resp_path):
-    resp_tm = datetime.strptime(resp_path.name[6:-5], '%Y-%m-%d %H;%M;%S')
-    resp_tm_str = resp_tm.replace(tzinfo=tzlocal()).isoformat()
+    resp_tm = datetime.strptime(resp_path.name[-29:-5], DATETIME_FILENAME_FORMAT)
+    resp_tm_str = resp_tm.isoformat()
 
     with open(resp_path, 'r', encoding='utf-8') as f:
         resp = json.load(f)
@@ -127,6 +125,10 @@ def after_process_data():
         df_u = clear_data(df)
         df_u.to_parquet(KH_TABLES_PATH / 'optimized' / (folder_path.name + '_optimized.parquet'))
 
+        # print(f"Start delete {folder_path}")
+        # shutil.rmtree(folder_path)
+        # print(f"{folder_path} is deleted")
+
 
 def main():
     scheduler = BackgroundScheduler(job_defaults={'max_instances': 8})
@@ -136,35 +138,38 @@ def main():
         end_date=END_DATE,
         id='listener')
 
-    print(datetime.now())
-    while datetime.now().microsecond > 5_000:
-        time.sleep(0.00002)
-    print(datetime.now())
+    scheduler.add_job(
+        after_process_data, 'interval',
+        start_date=START_DATE,
+        days=1,
+        end_date=END_DATE,
+        id='after_process_data')
+
     scheduler.start()
 
     # This code will be executed after the sceduler has started
     try:
         print('Scheduler started!')
-        display_files_num = True 
+        display_files_num = True
         prev_update = datetime.now().replace(minute=0, second=0, microsecond=0)
         while 1:
             dt_now = datetime.now()
-            path =  get_response_folder(dt_now)
+            path = get_response_folder(dt_now)
 
-            try:# for cases folder don't exist yet
+            try:  # for cases folder don't exist yet
                 files_list = list(pathlib.Path(path).iterdir())
             except:
                 files_list = []
             if len(files_list) % 1_000 > 10:
                 display_files_num = True
             elif display_files_num:
-                print(f"{dt_now.strftime('%Y-%m-%d %H:%M:%S')}"
+                print(f"{dt_now.strftime(DATETIME_PATTERN)}"
                       f"\t Total files num is {len(files_list)}")
                 display_files_num = False
                 prev_update = dt_now
 
             if (dt_now - prev_update).seconds > 30 * 60:
-                print(f"{dt_now.strftime('%Y-%m-%d %H:%M:%S')} : "
+                print(f"{dt_now.strftime(DATETIME_PATTERN)} : "
                       f"(last update {(dt_now - prev_update).seconds} sec ago)"
                       f"\t Total files num is {len(files_list)}")
                 prev_update = dt_now

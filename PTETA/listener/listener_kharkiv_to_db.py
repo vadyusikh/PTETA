@@ -1,23 +1,25 @@
-import os
-from datetime import datetime
 import datetime as dt
-from queue import Queue
 import json
-import requests
-import pandas as pd
+import os
 import time
+from datetime import datetime, timezone, timedelta
+from queue import Queue
 
+import pandas as pd
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from aws.src.TransGPSCVMonitor import TransGPSCVMonitor
+
 from PTETA.listener.utils.support_classes import LockingCounter
+from aws.src.TransGPSCVMonitor import TransGPSCVMonitor
 
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
 DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
+GPSTIME_TIMEZONE = timezone(timedelta(hours=2))
 
 REQUEST_FREQUENCY = 5
-PROCESS_FREQUENCY = 30
+PROCESS_FREQUENCY = 60 * 10
 
-START_DATE = datetime.now().strftime(DATETIME_PATTERN)
+START_DATE = (datetime.now() - dt.timedelta(minutes=9)).strftime(DATETIME_PATTERN)
 END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)
 END_DATE_2 = (datetime.now() + dt.timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)).strftime(DATETIME_PATTERN)
 COLUMNS = [
@@ -28,7 +30,7 @@ COLUMNS = [
 
 def request_data(process_queue: Queue, request_counter: LockingCounter) -> None:
     dt_now = datetime.now()
-    dt_tz_str = dt.datetime.now(dt.timezone.utc).strftime(f"{DATETIME_PATTERN} %z")
+    dt_tz_str = dt.datetime.now(dt.timezone.utc).strftime(f"{DATETIME_PATTERN}%z")
 
     try:
         request = requests.get(REQUEST_URI)
@@ -116,7 +118,8 @@ def process_data(
     last_avl_list = list()
     for state, frame in df_unique.groupby('imei'):
         item = frame.sort_values(
-            by="gpstime", ascending=False, key=lambda x: x.astype('datetime64[ns]')
+            by="gpstime", ascending=False,
+            key=lambda x: x.astype('datetime64[ns]')
         ).iloc[0]
         last_avl_list.append(item)
 

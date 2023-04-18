@@ -18,14 +18,21 @@ def dict_special_comparator(dict1, dict2, not_compare_keys=['response_datetime']
 def load_single_response(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
-            return (json.load(file), None)
+            return file_path.name, json.load(file)
     except Exception as e:
         print(f"Unable to open : {file_path}")
         print(f"Exception is '{e}'")
-        return (None, file)
+        return file_path.name, None
 
 
 def load_all_responses(folder):
+    ## TODO: apply after DATETIME_FILENAME_FORMAT convention works
+    # f_path_list = sorted(
+    #     list(folder.iterdir()),
+    #     #         key=lambda p: datetime.strptime(p.name[-24:-5] , DATETIME_FILENAME_FORMAT)
+    #     key=lambda p: datetime.strptime(p.name[-29:-5], DATETIME_FILENAME_FORMAT)
+    # )
+
     f_path_list = sorted(list(folder.iterdir()))
 
     with ThreadPoolExecutor(max_workers=40) as executor:
@@ -33,6 +40,6 @@ def load_all_responses(folder):
             tqdm(
                 executor.map(load_single_response, f_path_list),
                 total=len(f_path_list), miniters=int(len(f_path_list) // 10),
-                desc=f"Read {str(folder)} to write df", ascii=True
+                desc=f"Read {str(folder)} to RAM", ascii=True
             )
         )
