@@ -1,18 +1,19 @@
-import os
-from datetime import datetime
 import datetime as dt
-from queue import Queue
 import json
-import requests
-import pandas as pd
+import os
 import time
+from datetime import datetime
+from queue import Queue
 
+import pandas as pd
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from aws.src.TransGPSCVMonitor import TransGPSCVMonitor
+
+from PTETA.configs.config import DATETIME_PATTERN
 from PTETA.listener.utils.support_classes import LockingCounter
+from aws.src.TransGPSCVMonitor import TransGPSCVMonitor
 
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
-DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 
 REQUEST_FREQUENCY = 5
 PROCESS_FREQUENCY = 60

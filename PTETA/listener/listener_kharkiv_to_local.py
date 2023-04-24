@@ -1,5 +1,6 @@
 import json
 import pathlib
+import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -9,13 +10,13 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from tqdm import tqdm
 
+from PTETA.configs.config import FILENAME_DATETIME_FORMAT, DATETIME_PATTERN
+
 KHARKIV_FOLDER_PATH = pathlib.Path("../../data/local/kharkiv")
 KH_REQUESTS_PATH = KHARKIV_FOLDER_PATH / "jsons"
 KH_TABLES_PATH = KHARKIV_FOLDER_PATH / "tables"
 
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
-DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
-DATETIME_FILENAME_FORMAT = '%Y-%m-%d %H;%M;%S%z'
 
 REQ_TIME_DELTA = 5.0
 PROCESS_FREQUENCY = 30
@@ -43,7 +44,7 @@ def request_data():
         path = get_response_folder(dt_now)
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-        f_name = pathlib.Path(f"trans_{dt_now.astimezone(timezone.utc).strftime(DATETIME_FILENAME_FORMAT)}.json")
+        f_name = pathlib.Path(f"trans_{dt_now.astimezone(timezone.utc).strftime(FILENAME_DATETIME_FORMAT)}.json")
 
         if (path / f_name).is_file():
             print(f"{dt_now.strftime(DATETIME_PATTERN)} : '{f_name}' file is already exists!")
@@ -58,7 +59,7 @@ def request_data():
 
 
 def load_responses(resp_path):
-    resp_tm = datetime.strptime(resp_path.name[-29:-5], DATETIME_FILENAME_FORMAT)
+    resp_tm = datetime.strptime(resp_path.name[-29:-5], FILENAME_DATETIME_FORMAT)
     resp_tm_str = resp_tm.isoformat()
 
     with open(resp_path, 'r', encoding='utf-8') as f:
@@ -125,9 +126,9 @@ def after_process_data():
         df_u = clear_data(df)
         df_u.to_parquet(KH_TABLES_PATH / 'optimized' / (folder_path.name + '_optimized.parquet'))
 
-        # print(f"Start delete {folder_path}")
-        # shutil.rmtree(folder_path)
-        # print(f"{folder_path} is deleted")
+        print(f"Start delete {folder_path}")
+        shutil.rmtree(folder_path)
+        print(f"{folder_path} is deleted")
 
 
 def main():

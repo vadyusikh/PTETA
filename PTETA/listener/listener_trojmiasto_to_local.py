@@ -10,12 +10,11 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from tqdm import tqdm
 
+from PTETA.configs.config import FILENAME_DATETIME_FORMAT, DATETIME_PATTERN
 from PTETA.listener.utils.functions import \
     dict_special_comparator, load_all_responses
 
 REQUEST_URI = 'https://mapa.ztm.gda.pl/gpsPositions?v=2'
-DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
-DATETIME_FILENAME_FORMAT = '%Y-%m-%d %H;%M;%S%z'
 
 TROJMIASTO_FOLDER_PATH = pathlib.Path("../../data/local/trojmiasto")
 TROJMIASTO_REQUESTS_PATH = TROJMIASTO_FOLDER_PATH / "jsons"
@@ -64,7 +63,7 @@ def request_data():
         path = get_response_folder(dt_now)
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-        f_name = pathlib.Path(f"trans_{dt_now.astimezone(timezone.utc).strftime(DATETIME_FILENAME_FORMAT)}.json")
+        f_name = pathlib.Path(f"trans_{dt_now.astimezone(timezone.utc).strftime(FILENAME_DATETIME_FORMAT)}.json")
 
         if (path / f_name).is_file():
             print(f"{dt_now.strftime(DATETIME_PATTERN)} : '{f_name}' file is already exists!")
@@ -80,7 +79,7 @@ def request_data():
 
 def process_single_response(response):
     file_name, result = response[0], response[1]['vehicles']
-    response_dt = datetime.strptime(f"{file_name[-29:-5]}", f"{DATETIME_FILENAME_FORMAT}").astimezone(timezone.utc)
+    response_dt = datetime.strptime(f"{file_name[-29:-5]}", f"{FILENAME_DATETIME_FORMAT}").astimezone(timezone.utc)
     response_dt_str = response_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
     for i, _ in enumerate(result):
         result[i]['lastUpdate'] = response[1]['lastUpdate']

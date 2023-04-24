@@ -1,7 +1,11 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from pathlib import Path
 
 from tqdm.auto import tqdm
+
+from PTETA.configs.config import FILENAME_DATETIME_FORMAT, DATETIME_PATTERN
 
 
 def dict_special_comparator(dict1, dict2, not_compare_keys=['response_datetime']):
@@ -25,15 +29,12 @@ def load_single_response(file_path):
         return file_path.name, None
 
 
-def load_all_responses(folder):
+def load_all_responses(folder, filename_datetime_format=FILENAME_DATETIME_FORMAT):
     ## TODO: apply after DATETIME_FILENAME_FORMAT convention works
-    # f_path_list = sorted(
-    #     list(folder.iterdir()),
-    #     #         key=lambda p: datetime.strptime(p.name[-24:-5] , DATETIME_FILENAME_FORMAT)
-    #     key=lambda p: datetime.strptime(p.name[-29:-5], DATETIME_FILENAME_FORMAT)
-    # )
-
-    f_path_list = sorted(list(folder.iterdir()))
+    f_path_list = sorted(
+        list(folder.iterdir()),
+        key=lambda p: datetime.strptime(p.name[-29:-5], filename_datetime_format)
+    )
 
     with ThreadPoolExecutor(max_workers=40) as executor:
         return list(
@@ -43,3 +44,17 @@ def load_all_responses(folder):
                 desc=f"Read {str(folder)} to RAM", ascii=True
             )
         )
+
+
+def display_folder_status(folder: Path):
+    display_files_num = True
+    prev_update = datetime.now().replace(minute=0, second=0, microsecond=0)
+    while 1:
+        dt_now = datetime.now()
+        try:  # in cases folder don't exist yet
+            files_list = list(folder.iterdir())
+            print(f"{dt_now.strftime(DATETIME_PATTERN)}"
+                  f"\t Total files num is {len(files_list)}")
+        except:
+            print(f"{dt_now.strftime(DATETIME_PATTERN)}"
+                  f"\t Error raiser while try to get folder :\n\t''")

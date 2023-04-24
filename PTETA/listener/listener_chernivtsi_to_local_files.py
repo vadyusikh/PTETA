@@ -10,13 +10,12 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from tqdm.auto import tqdm
 
+from PTETA.configs.config import FILENAME_DATETIME_FORMAT, DATETIME_PATTERN
 from PTETA.listener.utils.functions import \
     dict_special_comparator, \
     load_all_responses
 
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
-DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
-DATETIME_FILENAME_FORMAT = '%Y-%m-%d %H;%M;%S%z'
 
 CHERNIVTSI_FOLDER_PATH = pathlib.Path(f"../../data/local/chernivtsi")
 CHERNIVTSI_REQUESTS_PATH = CHERNIVTSI_FOLDER_PATH / "jsons"
@@ -37,7 +36,7 @@ def get_response_folder(datetime_):
 def request_data():
     dt_now = datetime.now()
     dt_now_str = dt_now.strftime(DATETIME_PATTERN)
-    dt_now_file_str = dt_now.astimezone(timezone.utc).strftime(DATETIME_FILENAME_FORMAT)
+    dt_now_file_str = dt_now.astimezone(timezone.utc).strftime(FILENAME_DATETIME_FORMAT)
 
     try:
         request = requests.get(REQUEST_URI)
@@ -139,30 +138,6 @@ def main():
     # This code will be executed after the sceduler has started
     try:
         print('Scheduler started!')
-        display_files_num = True
-        prev_update = datetime.now().replace(minute=0, second=0, microsecond=0)
-        while 1:
-            dt_now = datetime.now()
-            path = get_response_folder(dt_now)
-            try:  # in cases folder don't exist yet
-                files_list = list(pathlib.Path(path).iterdir())
-            except:
-                files_list = []
-            if len(files_list) % 1_000 > 10:
-                display_files_num = True
-            elif display_files_num:
-                print(f"{dt_now.strftime('%Y-%m-%d %H:%M:%S')}"
-                      f"\t Total files num is {len(files_list)}")
-                display_files_num = False
-                prev_update = dt_now
-
-            if (dt_now - prev_update).seconds > 30 * 60:
-                print(f"{dt_now.strftime('%Y-%m-%d %H:%M:%S')} : "
-                      f"(last update {(dt_now - prev_update).seconds} sec ago)"
-                      f"\t Total files num is {len(files_list)}")
-                prev_update = dt_now
-
-            time.sleep(3)
     except KeyboardInterrupt:
         if scheduler.state:
             scheduler.shutdown()

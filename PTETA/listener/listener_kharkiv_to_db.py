@@ -9,11 +9,11 @@ import pandas as pd
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from PTETA.configs.config import DATETIME_PATTERN
 from PTETA.listener.utils.support_classes import LockingCounter
 from aws.src.TransGPSCVMonitor import TransGPSCVMonitor
 
 REQUEST_URI = 'https://gt.kh.ua/?do=api&fn=gt&noroutes'
-DATETIME_PATTERN = '%Y-%m-%d %H:%M:%S'
 GPSTIME_TIMEZONE = timezone(timedelta(hours=2))
 
 REQUEST_FREQUENCY = 5
