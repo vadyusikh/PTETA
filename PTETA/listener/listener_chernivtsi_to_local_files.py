@@ -13,7 +13,8 @@ from tqdm.auto import tqdm
 from PTETA.configs.config import FILENAME_DATETIME_FORMAT, DATETIME_PATTERN
 from PTETA.listener.utils.functions import \
     dict_special_comparator, \
-    load_all_responses
+    load_all_responses, \
+    display_folder_status
 
 REQUEST_URI = 'http://www.trans-gps.cv.ua/map/tracker/?selectedRoutesStr='
 
@@ -29,7 +30,9 @@ END_DATE = (datetime.now() + dt.timedelta(days=30)).strftime(DATETIME_PATTERN)
 response_prev = dict()
 
 
-def get_response_folder(datetime_):
+def get_response_folder(datetime_=None):
+    if datetime_ is None:
+        datetime_ = datetime.now()
     return CHERNIVTSI_REQUESTS_PATH / f"trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
 
 
@@ -133,11 +136,22 @@ def main():
         id='after_process_data'
     )
 
+    scheduler.add_job(
+        display_folder_status, 'interval',
+        kwargs={"get_folder_fn": get_response_folder},
+        start_date=START_DATE,
+        minutes=20,
+        end_date=END_DATE,
+        id='display_folder_status'
+    )
+
     scheduler.start()
 
     # This code will be executed after the sceduler has started
     try:
         print('Scheduler started!')
+        while True:
+            time.sleep(1)
     except KeyboardInterrupt:
         if scheduler.state:
             scheduler.shutdown()

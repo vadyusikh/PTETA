@@ -1,5 +1,5 @@
-import pymap3d
 import numpy as np
+import pymap3d
 
 
 def get_track_enu(coord_str: str, center: np.array):
@@ -51,7 +51,7 @@ class TrackENU:
         return len(self.track_geod)
 
     @classmethod
-    def check_coordinates(self, coords: np.array) -> np.array:
+    def check_coordinates(cls, coords: np.array) -> np.array:
         if coords.ndim > 2:
             raise ValueError(
                 f"Wrong input dimension - got {coords.ndim}, should be 1 or 2."
@@ -169,7 +169,6 @@ class TrackENU:
 
 
 if __name__ == "__main__":
-    import sys
     from os.path import dirname
 
     print(dirname(__file__))

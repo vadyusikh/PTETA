@@ -46,15 +46,14 @@ def load_all_responses(folder, filename_datetime_format=FILENAME_DATETIME_FORMAT
         )
 
 
-def display_folder_status(folder: Path):
-    display_files_num = True
-    prev_update = datetime.now().replace(minute=0, second=0, microsecond=0)
-    while 1:
-        dt_now = datetime.now()
-        try:  # in cases folder don't exist yet
-            files_list = list(folder.iterdir())
-            print(f"{dt_now.strftime(DATETIME_PATTERN)}"
-                  f"\t Total files num is {len(files_list)}")
-        except:
-            print(f"{dt_now.strftime(DATETIME_PATTERN)}"
-                  f"\t Error raiser while try to get folder :\n\t''")
+def display_folder_status(folder: Path = None, get_folder_fn=None):
+    dt_now = datetime.now()
+    if (folder is None) and not (get_folder_fn is None):
+        folder = get_folder_fn()
+    try:  # in cases folder don't exist yet
+        files_list = list(folder.iterdir())
+        print(f"{dt_now.strftime(DATETIME_PATTERN)}"
+              f"\t Total files num is {len(files_list)}")
+    except:
+        print(f"{dt_now.strftime(DATETIME_PATTERN)}"
+              f"\t Error raiser while try to get folder :\n\t''")

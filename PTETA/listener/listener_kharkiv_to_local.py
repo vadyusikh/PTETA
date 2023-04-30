@@ -11,6 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from tqdm import tqdm
 
 from PTETA.configs.config import FILENAME_DATETIME_FORMAT, DATETIME_PATTERN
+from PTETA.listener.utils.functions import display_folder_status
 
 KHARKIV_FOLDER_PATH = pathlib.Path("../../data/local/kharkiv")
 KH_REQUESTS_PATH = KHARKIV_FOLDER_PATH / "jsons"
@@ -28,7 +29,9 @@ END_DATE_2 = (datetime.now() + timedelta(days=30, seconds=2 * PROCESS_FREQUENCY)
 response_prev = dict()
 
 
-def get_response_folder(datetime_):
+def get_response_folder(datetime_=None):
+    if datetime_ is None:
+        datetime_ = datetime.now()
     return KH_REQUESTS_PATH / f"trans_data_{datetime_.strftime('%d_%b_%Y').upper()}"
 
 
@@ -146,36 +149,22 @@ def main():
         end_date=END_DATE,
         id='after_process_data')
 
+    scheduler.add_job(
+        display_folder_status, 'interval',
+        kwargs={"get_folder_fn": get_response_folder},
+        start_date=START_DATE,
+        minutes=20,
+        end_date=END_DATE,
+        id='display_folder_status'
+    )
+
     scheduler.start()
 
     # This code will be executed after the sceduler has started
     try:
         print('Scheduler started!')
-        display_files_num = True
-        prev_update = datetime.now().replace(minute=0, second=0, microsecond=0)
-        while 1:
-            dt_now = datetime.now()
-            path = get_response_folder(dt_now)
-
-            try:  # for cases folder don't exist yet
-                files_list = list(pathlib.Path(path).iterdir())
-            except:
-                files_list = []
-            if len(files_list) % 1_000 > 10:
-                display_files_num = True
-            elif display_files_num:
-                print(f"{dt_now.strftime(DATETIME_PATTERN)}"
-                      f"\t Total files num is {len(files_list)}")
-                display_files_num = False
-                prev_update = dt_now
-
-            if (dt_now - prev_update).seconds > 30 * 60:
-                print(f"{dt_now.strftime(DATETIME_PATTERN)} : "
-                      f"(last update {(dt_now - prev_update).seconds} sec ago)"
-                      f"\t Total files num is {len(files_list)}")
-                prev_update = dt_now
-
-            time.sleep(3)
+        while True:
+            time.sleep(1)
     except KeyboardInterrupt:
         if scheduler.state:
             scheduler.shutdown()
